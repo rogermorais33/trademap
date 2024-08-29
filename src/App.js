@@ -1,5 +1,4 @@
-import { Chart } from "react-google-charts";
-import { Card, Grid, Grid2, Typography } from "@mui/material"
+import { Grid2, Typography } from "@mui/material"
 import ChartCard from "./components/chartCard"
 
 export const data = [
