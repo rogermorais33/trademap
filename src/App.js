@@ -1,14 +1,29 @@
 import { Chart } from "react-google-charts";
-import { Card, Grid2 } from "@mui/material"
+import { Card, Grid, Grid2, Typography } from "@mui/material"
+import ChartCard from "./components/chartCard"
 
 export const data = [
-  ["Country", "Popularity"],
+  ["Country", "Exportação de Animais vivos"],
   ["Germany", 200],
   ["United States", 300],
   ["Brazil", 400],
   ["Canada", 500],
   ["France", 600],
   ["RU", 700],
+];
+
+export const data2 = [
+  ["ID", "Life Expectancy", "Fertility Rate", "Region", "Population"],
+  ["CAN", 80.66, 1.67, "North America", 33739900],
+  ["DEU", 79.84, 1.36, "Europe", 81902307],
+  ["DNK", 78.6, 1.84, "Europe", 5523095],
+  ["EGY", 72.73, 2.78, "Middle East", 79716203],
+  ["GBR", 80.05, 2, "Europe", 61801570],
+  ["IRN", 72.49, 1.7, "Middle East", 73137148],
+  ["IRQ", 68.09, 4.77, "Middle East", 31090763],
+  ["ISR", 81.55, 2.96, "Middle East", 7485600],
+  ["RUS", 68.6, 1.54, "Europe", 141850000],
+  ["USA", 78.09, 2.05, "North America", 307007000],
 ];
 
 /*background: rgba(255, 255, 255, 0.28);
@@ -19,32 +34,18 @@ backdrop-filter: blur(6.9px);
 
 function App() {
 
-  const options = {
-    backgroundColor: "none",
-  };
+
 
   return (
-    <Grid2 container paddingInline={"10%"} paddingBlock={"5%"} gap={"24px"}>
-      <Grid2 size={{xs:12, lg:6 }}>
-        <Card sx={{ borderRadius: "24px", padding: "24px", background: "rgba(0, 0, 0, 0.28)", boxShadow:"0 4px 30px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(6.9px)", WebkitBackdropFilter: "blur(6.9px)"}}>
-          <Chart
-            options={options}
-            chartEvents={[
-              {
-                eventName: "select",
-                callback: ({ chartWrapper }) => {
-                  const chart = chartWrapper.getChart();
-                  const selection = chart.getSelection();
-                  if (selection.length === 0) return;
-                },
-              },
-            ]}
-            chartType="GeoChart"
-            width="100%"
-            height="400px"
-            data={data}
-          />
-        </Card>
+    <Grid2 container direction={"column"} paddingInline={"10%"} paddingBlock={"5%"} gap={"24px"}>
+      <Typography variant="h3" fontFamily={"gantari"} fontWeight={100} color="#ffffff">TradeMar</Typography>
+      <Grid2 container direction={"column"} spacing={4}>
+        <Grid2 size={{xs:12,lg:6}}>
+          {ChartCard(data, "GeoChart")}
+        </Grid2>
+        <Grid2 size={{xs:12,lg:6}}>
+          {ChartCard(data2, "BubbleChart")}
+        </Grid2>
       </Grid2>
     </Grid2>
   );
