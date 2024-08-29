@@ -1,5 +1,5 @@
 import { Chart } from "react-google-charts";
-import { Paper, Card, Grid2 } from "@mui/material"
+import { Card, Grid2 } from "@mui/material"
 
 export const data = [
   ["Country", "Popularity"],
