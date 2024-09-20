@@ -1,5 +1,12 @@
 import { Grid2, Typography } from "@mui/material"
 import ChartCard from "../../components/chartCard"
+import React from "react";
+import { useEffect, useState } from "react";
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
+import axios from "axios"
+
+
 
 export const data = [
   ["Country", "Exportação de Animais vivos"],
@@ -34,15 +41,44 @@ backdrop-filter: blur(6.9px);
 function App() {
 
 
+  const [countries, setCountries] = useState([]);
+  function fetchProducts() {
+    axios.get('Reporters.json')
+      .then(response => {
+        setCountries((response.data.results))
+      })
+      .catch(error => {
+        console.error('Erro ao fazer a requisição:', error);
+      });
+  }
+
+  
+  useEffect(() => {
+    fetchProducts()
+  
+  }, [])
+  // [{"id": 4, "text": "Afghanistan", "reporterCode": 4, "reporterDesc": "Afghanistan", "reporterNote": "Afghanistan", "reporterCodeIsoAlpha2": "AF", "reporterCodeIsoAlpha3": "AFG", "entryEffectiveDate": "1900-01-01T00:00:00", "isGroup": false}]
+  // response.data.results.map(item => item.text);
+
+  var resultCountries = countries.map(country =>({
+    label: country.text,
+    value: country.reporterCode,
+  }));
 
   return (
     <Grid2 container direction={"column"} paddingInline={"10%"} paddingBlock={"5%"} gap={"24px"}>
       <Typography variant="h3" fontFamily={"gantari"} fontWeight={100} color="#ffffff">TradeMar</Typography>
+      <Autocomplete
+        disablePortal
+        options={resultCountries}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="countries" />}
+      />
       <Grid2 container direction={"column"} spacing={4}>
-        <Grid2 size={{xs:12,lg:6}}>
+        <Grid2 size={{ xs: 12, lg: 6 }}>
           {ChartCard(data, "GeoChart")}
         </Grid2>
-        <Grid2 size={{xs:12,lg:6}}>
+        <Grid2 size={{ xs: 12, lg: 6 }}>
           {ChartCard(data2, "BubbleChart")}
         </Grid2>
       </Grid2>
