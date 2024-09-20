@@ -39,11 +39,9 @@ backdrop-filter: blur(6.9px);
 -webkit-backdrop-filter: blur(6.9px);*/
 
 function App() {
-
-
   const [countries, setCountries] = useState([]);
   function fetchProducts() {
-    axios.get('Reporters.json')
+    axios.get('Reporters.json') // partnerAreas.json / Reporters.json
       .then(response => {
         setCountries((response.data.results))
       })
@@ -52,13 +50,9 @@ function App() {
       });
   }
 
-  
   useEffect(() => {
     fetchProducts()
-  
   }, [])
-  // [{"id": 4, "text": "Afghanistan", "reporterCode": 4, "reporterDesc": "Afghanistan", "reporterNote": "Afghanistan", "reporterCodeIsoAlpha2": "AF", "reporterCodeIsoAlpha3": "AFG", "entryEffectiveDate": "1900-01-01T00:00:00", "isGroup": false}]
-  // response.data.results.map(item => item.text);
 
   var resultCountries = countries.map(country =>({
     label: country.text,
