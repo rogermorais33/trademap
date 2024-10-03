@@ -42,7 +42,9 @@ function App() {
 
 
   const [countries, setCountries] = useState([]);
-  function fetchProducts() {
+  const [data3, setData3] = useState([]);
+
+  function fetchCountries() {
     axios.get('Reporters.json')
       .then(response => {
         setCountries((response.data.results))
@@ -52,13 +54,29 @@ function App() {
       });
   }
 
+  function fetchData3() {
+    const headers = {
+      'Ocp-Apim-Subscription-Key': '7a7c60bd34324eaa92e9199df74523d5'
+    };
+  
+    axios.get('https://comtradeapi.un.org/data/v1/getDa/C/A/HS?251&2022', { headers })
+      .then(response => {
+        setData3(response.data)
+      })
+      .catch(error => {
+        console.error('Erro ao fazer a requisição:', error);
+      });
+  }
+
   
   useEffect(() => {
-    fetchProducts()
-  
+    fetchCountries()
+    fetchData3()
+    
   }, [])
   // [{"id": 4, "text": "Afghanistan", "reporterCode": 4, "reporterDesc": "Afghanistan", "reporterNote": "Afghanistan", "reporterCodeIsoAlpha2": "AF", "reporterCodeIsoAlpha3": "AFG", "entryEffectiveDate": "1900-01-01T00:00:00", "isGroup": false}]
   // response.data.results.map(item => item.text);
+  console.log(data3)
 
   var resultCountries = countries.map(country =>({
     label: country.text,
@@ -67,7 +85,7 @@ function App() {
 
   return (
     <Grid2 container direction={"column"} paddingInline={"10%"} paddingBlock={"5%"} gap={"24px"}>
-      <Typography variant="h3" fontFamily={"gantari"} fontWeight={100} color="#ffffff">TradeMar</Typography>
+      <Typography variant="h3" fontFamily={"gantari"} fontWeight={100}>TradeMar</Typography>
       <Autocomplete
         disablePortal
         options={resultCountries}
