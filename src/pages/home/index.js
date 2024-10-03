@@ -4,6 +4,7 @@ import React from "react";
 import { useEffect, useState } from "react";
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
+import BasicDateField from "../../components/DatePicker";
 import axios from "axios"
 
 
@@ -39,24 +40,254 @@ backdrop-filter: blur(6.9px);
 -webkit-backdrop-filter: blur(6.9px);*/
 
 function App() {
-  const [countries, setCountries] = useState([]);
-  function fetchProducts() {
-    axios.get('Reporters.json') // partnerAreas.json / Reporters.json
+  const [reportCountries, setReportCountries] = useState([]);
+  const [partnerCountries, setPartnerCountries] = useState([]);
+  const [customCodeCountries, setCustomCodeCountries] = useState([]);
+  const [modeOfTransportCodes, setModeOfTransportCodes] = useState([]);
+  const [becProducts, setBecProducts] = useState([]);
+  const [hsProducts, setHsProducts] = useState([]);
+  const [sitcProducts, setSitcProducts] = useState([]);
+  const [ebopsService, setEbopsService] = useState([]);
+
+  // root: https://comtradeapi.un.org/files/v1/app/reference/
+  const typeCode = [
+    {
+      "text": "commodities",
+      "code": "C",
+    },
+    {
+      "text": "service",
+      "code": "S",
+    },
+  ]
+
+  const freqCode = [
+    {
+      "text": "Annual",
+      "code": "A",
+    },
+    {
+      "text": "Quarterly",
+      "code": "Q",
+    },
+    {
+      "text": "Monthly",
+      "code": "M",
+    },
+  ]
+
+  const clCode = [
+    {
+      "text": "HS",
+      "code": "HS",
+    },
+    {
+      "text": "SITC",
+      "code": "SITC",
+    },
+    {
+      "text": "BEC",
+      "code": "BEC",
+    },
+    {
+      "text": "EBOPS",
+      "code": "EBOPS",
+    },
+  ]
+
+  function fetchReporters() {
+    axios.get('Reporters.json')
       .then(response => {
-        setCountries((response.data.results))
+        setReportCountries((response.data.results))
       })
       .catch(error => {
         console.error('Erro ao fazer a requisição:', error);
       });
   }
 
+  function fetchPartners() {
+    axios.get('partnerAreas.json') 
+      .then(response => {
+        setPartnerCountries((response.data.results))
+      })
+      .catch(error => {
+        console.error('Erro ao fazer a requisição:', error);
+      });
+  }
+
+  function fetchCustomCode() {
+    axios.get('CustomsCodes.json') 
+      .then(response => {
+        setCustomCodeCountries((response.data.results))
+      })
+      .catch(error => {
+        console.error('Erro ao fazer a requisição:', error);
+      });
+  }
+
+  function fetchModeOfTransportCodes() {
+    axios.get('ModeOfTransportCodes.json') 
+      .then(response => {
+        setModeOfTransportCodes((response.data.results))
+      })
+      .catch(error => {
+        console.error('Erro ao fazer a requisição:', error);
+      });
+  }
+
+  function fetchBecProducts() {
+    axios.get('B4.json')
+      .then(responseB4 => {
+        const productsB4 = responseB4.data.results;
+        axios.get('B5.json')
+          .then(responseB5 => {
+            const productsB5 = responseB5.data.results;
+            const combinedBecProducts = [...productsB4, ...productsB5];
+
+            setBecProducts(combinedBecProducts);
+          })
+          .catch(error => {
+            console.error('Error fetching B5.json:', error);
+          });
+      })
+      .catch(error => {
+        console.error('Error fetching B4.json:', error);
+      });
+    }
+
+  function fetchHsProducts() {
+    // TODO: Implement Intersection_Observer web API to load all of them
+    const hs_urls = [
+      "H0.json",
+      // "H1.json",
+      // "H2.json",
+      // "H3.json",
+      // "H4.json",
+      // "H5.json",
+      // "H6.json",
+      // "HS.json",
+    ]
+    axios.all(hs_urls.map(url => axios.get(url)))
+      .then(axios.spread((...responses) => {
+        const combinedHsProducts = responses.reduce((acc, response) => {
+          return [...acc, ...response.data.results];
+        }, []);
+
+        setHsProducts(combinedHsProducts);
+      }))
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  }
+
+  function fetchSitcProducts() {
+    // TODO(fix): Encountered two children with the same key
+    const sitc_urls = [
+      "S1.json",
+      // "S2.json",
+      // "S3.json",
+      // "S4.json",
+      // "SS.json"
+    ]
+    axios.all(sitc_urls.map(url => axios.get(url)))
+      .then(axios.spread((...responses) => {
+        const combinedSitcProducts = responses.reduce((acc, response) => {
+          return [...acc, ...response.data.results];
+        }, []);
+
+        setSitcProducts(combinedSitcProducts);
+      }))
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      });
+  }
+
+  function fetchEbopsServices() {
+    // TODO(fix): Encountered two children with the same key
+    const ebops_url = [
+      "EB02.json",
+      "EB10.json",
+      "EB10S.json",
+      "EB.json",
+    ]
+    const fetchRequests = ebops_url.map(url => axios.get(url));
+    Promise.all(fetchRequests)
+      .then(responses => {
+        const combinedProducts = responses.reduce((acc, response) => {
+          return acc.concat(response.data.results);
+        }, []);
+
+        setEbopsService(combinedProducts);
+      })
+      .catch(error => {
+        console.error('Error fetching the JSON files:', error);
+      });
+  }
+
   useEffect(() => {
-    fetchProducts()
+    fetchReporters();
+    fetchPartners();
+    fetchCustomCode();
+    fetchModeOfTransportCodes();
+    fetchBecProducts();
+    fetchHsProducts();
+    fetchSitcProducts();
+    fetchEbopsServices();
   }, [])
 
-  var resultCountries = countries.map(country =>({
+  const resTypeCode = typeCode.map(country =>({
+    label: country.text,
+    value: country.code,
+  }));
+
+  const resFreqCode = freqCode.map(country =>({
+    label: country.text,
+    value: country.code,
+  }));
+
+  const resClCode = clCode.map(country =>({
+    label: country.text,
+    value: country.code,
+  }));
+
+  const resPartnerCountries = partnerCountries.map(country =>({
+    label: country.text,
+    value: country.PartnerCode,
+  }));
+  
+  const resReportCountries = reportCountries.map(country =>({
     label: country.text,
     value: country.reporterCode,
+  }));
+
+  const resCustomCodeCountries = customCodeCountries.map(country =>({
+    label: country.text,
+    value: country.id,
+  }));
+  
+  const resModeOfTransportCodes = modeOfTransportCodes.map(country =>({
+    label: country.text,
+    value: country.id,
+  }));
+
+  const resBecProducts = becProducts.map(country =>({
+    label: country.text,
+    value: country.id,
+  }));
+
+  const resHsProducts = hsProducts.map(country =>({
+    label: country.text,
+    value: country.id,
+  }));
+
+  const resSitcProducts = sitcProducts.map(country =>({
+    label: country.text,
+    value: country.id,
+  }));
+
+  const resEbopsService = ebopsService.map(country =>({
+    label: country.text,
+    value: country.id,
   }));
 
   return (
@@ -64,9 +295,76 @@ function App() {
       <Typography variant="h3" fontFamily={"gantari"} fontWeight={100} color="#ffffff">TradeMar</Typography>
       <Autocomplete
         disablePortal
-        options={resultCountries}
+        options={resTypeCode}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="countries" />}
+        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resFreqCode}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resClCode}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resReportCountries}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+      />
+      <BasicDateField />
+      <Autocomplete
+        disablePortal
+        options={resPartnerCountries}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Partner Countries" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resPartnerCountries}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Partner Countries 2" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resCustomCodeCountries}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Custom Code Countries" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resModeOfTransportCodes}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Mode Of Transport Codes" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resBecProducts}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="BEC Products" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resHsProducts}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="HS Products" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resSitcProducts}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="SITC Products" />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resEbopsService}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Ebops Service" />}
       />
       <Grid2 container direction={"column"} spacing={4}>
         <Grid2 size={{ xs: 12, lg: 6 }}>
