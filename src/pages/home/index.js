@@ -1,4 +1,4 @@
-import { Grid2, Typography } from "@mui/material"
+import { Button, Grid2, Typography } from "@mui/material"
 import ChartCard from "../../components/chartCard"
 import React from "react";
 import { useEffect, useState } from "react";
@@ -48,6 +48,38 @@ function App() {
   const [hsProducts, setHsProducts] = useState([]);
   const [sitcProducts, setSitcProducts] = useState([]);
   const [ebopsService, setEbopsService] = useState([]);
+
+
+  const [reportCountriesValue, setReportCountriesValue] = useState(null);
+  const [partnerCountriesValue, setPartnerCountriesValue] = useState(null);
+  const [partner2CountriesValue, setPartner2CountriesValue] = useState(null);
+  const [customCodeCountriesValue, setCustomCodeCountriesValue] = useState(null);
+  const [modeOfTransportCodesValue, setModeOfTransportCodesValue] = useState(null);
+  const [becProductsValue, setBecProductsValue] = useState(null);
+  const [hsProductsValue, setHsProductsValue] = useState(null);
+  const [sitcProductsValue, setSitcProductsValue] = useState(null);
+  const [ebopsServiceValue, setEbopsServiceValue] = useState(null);
+  const [typeCodeValue, setTypeCodeValue] = useState(null);
+  const [freqCodeValue, setFreqCodeValue] = useState(null);
+  const [clCodeValue, setClCodeValue] = useState(null);
+
+  // Função para lidar com o envio ou processamento dos dados
+  const handleSubmit = () => {
+    const selectedValues = {
+      reportCountriesValue,
+      partnerCountriesValue,
+      customCodeCountriesValue,
+      modeOfTransportCodesValue,
+      becProductsValue,
+      hsProductsValue,
+      sitcProductsValue,
+      ebopsServiceValue,
+    };
+    
+    console.log('Valores Selecionados:', selectedValues);
+    
+    // Aqui você pode adicionar a lógica para enviar esses dados para a API do Comtrade
+  }
 
   // root: https://comtradeapi.un.org/files/v1/app/reference/
   const typeCode = [
@@ -156,16 +188,15 @@ function App() {
     }
 
   function fetchHsProducts() {
-    // TODO: Implement Intersection_Observer web API to load all of them
     const hs_urls = [
-      "H0.json",
+      // "H0.json",
       // "H1.json",
       // "H2.json",
       // "H3.json",
       // "H4.json",
       // "H5.json",
       // "H6.json",
-      // "HS.json",
+      "HS.json",
     ]
     axios.all(hs_urls.map(url => axios.get(url)))
       .then(axios.spread((...responses) => {
@@ -181,13 +212,12 @@ function App() {
   }
 
   function fetchSitcProducts() {
-    // TODO(fix): Encountered two children with the same key
     const sitc_urls = [
-      "S1.json",
+      // "S1.json",
       // "S2.json",
       // "S3.json",
       // "S4.json",
-      // "SS.json"
+      "SS.json"
     ]
     axios.all(sitc_urls.map(url => axios.get(url)))
       .then(axios.spread((...responses) => {
@@ -203,11 +233,10 @@ function App() {
   }
 
   function fetchEbopsServices() {
-    // TODO(fix): Encountered two children with the same key
     const ebops_url = [
-      "EB02.json",
-      "EB10.json",
-      "EB10S.json",
+      // "EB02.json",
+      // "EB10.json",
+      // "EB10S.json",
       "EB.json",
     ]
     const fetchRequests = ebops_url.map(url => axios.get(url));
@@ -296,24 +325,32 @@ function App() {
       <Autocomplete
         disablePortal
         options={resTypeCode}
+        value={typeCodeValue}
+        onChange={(event, newValue) => setTypeCodeValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Report Countries" />}
       />
       <Autocomplete
         disablePortal
         options={resFreqCode}
+        value={freqCodeValue}
+        onChange={(event, newValue) => setFreqCodeValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Report Countries" />}
       />
       <Autocomplete
         disablePortal
         options={resClCode}
+        value={clCodeValue}
+        onChange={(event, newValue) => setClCodeValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Report Countries" />}
       />
       <Autocomplete
         disablePortal
         options={resReportCountries}
+        value={reportCountriesValue}
+        onChange={(event, newValue) => setReportCountriesValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Report Countries" />}
       />
@@ -321,51 +358,68 @@ function App() {
       <Autocomplete
         disablePortal
         options={resPartnerCountries}
+        value={partnerCountriesValue}
+        onChange={(event, newValue) => setPartnerCountriesValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Partner Countries" />}
       />
       <Autocomplete
         disablePortal
         options={resPartnerCountries}
+        value={partner2CountriesValue}
+        onChange={(event, newValue) => setPartner2CountriesValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Partner Countries 2" />}
       />
       <Autocomplete
         disablePortal
         options={resCustomCodeCountries}
+        value={customCodeCountriesValue}
+        onChange={(event, newValue) => setCustomCodeCountriesValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Custom Code Countries" />}
       />
       <Autocomplete
         disablePortal
         options={resModeOfTransportCodes}
+        value={modeOfTransportCodesValue}
+        onChange={(event, newValue) => setModeOfTransportCodesValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Mode Of Transport Codes" />}
       />
       <Autocomplete
         disablePortal
         options={resBecProducts}
+        value={becProductsValue}
+        onChange={(event, newValue) => setBecProductsValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="BEC Products" />}
       />
       <Autocomplete
         disablePortal
         options={resHsProducts}
+        value={hsProductsValue}
+        onChange={(event, newValue) => setHsProductsValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="HS Products" />}
       />
       <Autocomplete
         disablePortal
         options={resSitcProducts}
+        value={sitcProductsValue}
+        onChange={(event, newValue) => setSitcProductsValue(newValue)}
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="SITC Products" />}
       />
       <Autocomplete
         disablePortal
         options={resEbopsService}
+        value={ebopsServiceValue}
+        onChange={(event, newValue) => setEbopsServiceValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="Ebops Service" />}
+        renderInput={(params) => <TextField {...params} label="EBOPS Service" />}
       />
+      <Button onClick={handleSubmit} variant="contained">Enviar</Button>
       <Grid2 container direction={"column"} spacing={4}>
         <Grid2 size={{ xs: 12, lg: 6 }}>
           {ChartCard(data, "GeoChart")}
