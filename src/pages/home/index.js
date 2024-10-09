@@ -63,22 +63,41 @@ function App() {
   const [freqCodeValue, setFreqCodeValue] = useState(null);
   const [clCodeValue, setClCodeValue] = useState(null);
 
-  // Função para lidar com o envio ou processamento dos dados
-  const handleSubmit = () => {
+  const handleSubmit = (format) => {
     const selectedValues = {
       reportCountriesValue,
       partnerCountriesValue,
+      partner2CountriesValue,
       customCodeCountriesValue,
       modeOfTransportCodesValue,
       becProductsValue,
       hsProductsValue,
       sitcProductsValue,
       ebopsServiceValue,
+      typeCodeValue,
+      freqCodeValue,
+      clCodeValue,
     };
-    
-    console.log('Valores Selecionados:', selectedValues);
-    
-    // Aqui você pode adicionar a lógica para enviar esses dados para a API do Comtrade
+
+    fetch(`http://localhost:5000/convert${format ? '?format=' + format : ''}`, {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(selectedValues)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = format === 'xlsx' ? 'data.xlsx' : 'data.csv';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(error => console.error('Error:', error));
   }
 
   // root: https://comtradeapi.un.org/files/v1/app/reference/
@@ -419,7 +438,10 @@ function App() {
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="EBOPS Service" />}
       />
-      <Button onClick={handleSubmit} variant="contained">Enviar</Button>
+      <Button onClick={() => handleSubmit()} variant="contained">Download CSV</Button>
+      <Button onClick={() => handleSubmit("xlsx")} variant="contained">Download XLSX</Button>
+
+
       <Grid2 container direction={"column"} spacing={4}>
         <Grid2 size={{ xs: 12, lg: 6 }}>
           {ChartCard(data, "GeoChart")}
