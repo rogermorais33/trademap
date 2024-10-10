@@ -4,7 +4,6 @@ import React from "react";
 import { useEffect, useState } from "react";
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
-import BasicDateField from "../../components/DatePicker";
 import axios from "axios"
 
 
@@ -44,25 +43,24 @@ function App() {
   const [partnerCountries, setPartnerCountries] = useState([]);
   const [customCodeCountries, setCustomCodeCountries] = useState([]);
   const [modeOfTransportCodes, setModeOfTransportCodes] = useState([]);
-  const [becProducts, setBecProducts] = useState([]);
-  const [hsProducts, setHsProducts] = useState([]);
-  const [sitcProducts, setSitcProducts] = useState([]);
-  const [ebopsService, setEbopsService] = useState([]);
-
+  const [products, setProducts] = useState([]);
+  const [services, setServices] = useState([]);
+  const [period, setPeriod] = useState([]);
 
   const [reportCountriesValue, setReportCountriesValue] = useState(null);
   const [partnerCountriesValue, setPartnerCountriesValue] = useState(null);
   const [partner2CountriesValue, setPartner2CountriesValue] = useState(null);
   const [customCodeCountriesValue, setCustomCodeCountriesValue] = useState(null);
   const [modeOfTransportCodesValue, setModeOfTransportCodesValue] = useState(null);
-  const [becProductsValue, setBecProductsValue] = useState(null);
-  const [hsProductsValue, setHsProductsValue] = useState(null);
-  const [sitcProductsValue, setSitcProductsValue] = useState(null);
-  const [ebopsServiceValue, setEbopsServiceValue] = useState(null);
+  const [productsValue, setProductsValue] = useState(null);
+  const [serviceValue, setServiceValue] = useState(null);
   const [typeCodeValue, setTypeCodeValue] = useState(null);
   const [freqCodeValue, setFreqCodeValue] = useState(null);
   const [clCodeValue, setClCodeValue] = useState(null);
-
+  const [flowCodeValue, setFlowCodeValue] = useState(null);
+  
+  const [dateValue, setDateValue] = useState(null);
+  
   const handleSubmit = (format) => {
     const selectedValues = {
       reportCountriesValue,
@@ -70,14 +68,15 @@ function App() {
       partner2CountriesValue,
       customCodeCountriesValue,
       modeOfTransportCodesValue,
-      becProductsValue,
-      hsProductsValue,
-      sitcProductsValue,
-      ebopsServiceValue,
+      productsValue,
+      serviceValue,
       typeCodeValue,
       freqCodeValue,
       clCodeValue,
+      dateValue,
+      flowCodeValue,
     };
+    console.log("testing", selectedValues);
 
     fetch(`http://localhost:5000/convert${format ? '?format=' + format : ''}`, {
       method: 'POST',
@@ -107,7 +106,7 @@ function App() {
       "code": "C",
     },
     {
-      "text": "service",
+      "text": "services",
       "code": "S",
     },
   ]
@@ -145,6 +144,43 @@ function App() {
       "code": "EBOPS",
     },
   ]
+
+
+  const flowCode = [
+    {
+      "text": "Import",
+      "code": "M",
+    },
+    {
+      "text": "Export",
+      "code": "X",
+    },
+  ]
+
+  function periodToFetch() {
+    const currentYear = new Date().getFullYear();
+    const period = [];
+  
+    for (let year = 1962; year <= currentYear; year++) {
+      if (freqCodeValue?.value === "M") {
+        for (let month = 1; month <= 12; month++) {
+          const formattedMonth = month.toString().padStart(2, '0');
+          const yearMonth = `${year}/${formattedMonth}`;
+          period.push({
+            text: yearMonth,
+            code: `${year}${formattedMonth}`,
+          });
+        }
+      }
+      else {
+        period.push({
+          text: year.toString(),
+          code: year.toString(),
+        });
+      }
+    }
+    setPeriod(period);
+  }
 
   function fetchReporters() {
     axios.get('Reporters.json')
@@ -186,86 +222,39 @@ function App() {
       });
   }
 
-  function fetchBecProducts() {
-    axios.get('B4.json')
-      .then(responseB4 => {
-        const productsB4 = responseB4.data.results;
-        axios.get('B5.json')
-          .then(responseB5 => {
-            const productsB5 = responseB5.data.results;
-            const combinedBecProducts = [...productsB4, ...productsB5];
-
-            setBecProducts(combinedBecProducts);
-          })
-          .catch(error => {
-            console.error('Error fetching B5.json:', error);
-          });
-      })
-      .catch(error => {
-        console.error('Error fetching B4.json:', error);
-      });
-    }
-
-  function fetchHsProducts() {
-    const hs_urls = [
-      // "H0.json",
-      // "H1.json",
-      // "H2.json",
-      // "H3.json",
-      // "H4.json",
-      // "H5.json",
-      // "H6.json",
+  function fetchProducts() {
+    const products_urls = [
       "HS.json",
+      "B4.json",
+      "B5.json",
+      "SS.json",
     ]
-    axios.all(hs_urls.map(url => axios.get(url)))
-      .then(axios.spread((...responses) => {
-        const combinedHsProducts = responses.reduce((acc, response) => {
-          return [...acc, ...response.data.results];
-        }, []);
-
-        setHsProducts(combinedHsProducts);
-      }))
-      .catch(error => {
-        console.error('Error fetching data:', error);
-      });
-  }
-
-  function fetchSitcProducts() {
-    const sitc_urls = [
-      // "S1.json",
-      // "S2.json",
-      // "S3.json",
-      // "S4.json",
-      "SS.json"
-    ]
-    axios.all(sitc_urls.map(url => axios.get(url)))
-      .then(axios.spread((...responses) => {
-        const combinedSitcProducts = responses.reduce((acc, response) => {
-          return [...acc, ...response.data.results];
-        }, []);
-
-        setSitcProducts(combinedSitcProducts);
-      }))
-      .catch(error => {
-        console.error('Error fetching data:', error);
-      });
-  }
-
-  function fetchEbopsServices() {
-    const ebops_url = [
-      // "EB02.json",
-      // "EB10.json",
-      // "EB10S.json",
-      "EB.json",
-    ]
-    const fetchRequests = ebops_url.map(url => axios.get(url));
+    const fetchRequests = products_urls.map(url => axios.get(url));
     Promise.all(fetchRequests)
       .then(responses => {
         const combinedProducts = responses.reduce((acc, response) => {
           return acc.concat(response.data.results);
         }, []);
 
-        setEbopsService(combinedProducts);
+        setProducts(combinedProducts);
+      })
+      .catch(error => {
+        console.error('Error fetching the JSON files:', error);
+      });
+  }
+
+  function fetchServices() {
+    const services_url = [
+      "EB.json",      
+    ]
+    const fetchRequests = services_url.map(url => axios.get(url));
+    Promise.all(fetchRequests)
+      .then(responses => {
+        const combinedProducts = responses.reduce((acc, response) => {
+          return acc.concat(response.data.results);
+        }, []);
+
+        setServices(combinedProducts);
       })
       .catch(error => {
         console.error('Error fetching the JSON files:', error);
@@ -277,11 +266,13 @@ function App() {
     fetchPartners();
     fetchCustomCode();
     fetchModeOfTransportCodes();
-    fetchBecProducts();
-    fetchHsProducts();
-    fetchSitcProducts();
-    fetchEbopsServices();
+    fetchProducts();
+    fetchServices();
   }, [])
+
+  useEffect(() => {
+    periodToFetch();
+  }, [freqCodeValue])
 
   const resTypeCode = typeCode.map(country =>({
     label: country.text,
@@ -294,6 +285,16 @@ function App() {
   }));
 
   const resClCode = clCode.map(country =>({
+    label: country.text,
+    value: country.code,
+  }));
+
+  const resFlowCode = flowCode.map(country =>({
+    label: country.text,
+    value: country.code,
+  }));
+
+  const resPeriod = period.map(country =>({
     label: country.text,
     value: country.code,
   }));
@@ -318,22 +319,12 @@ function App() {
     value: country.id,
   }));
 
-  const resBecProducts = becProducts.map(country =>({
+  const resProducts = products.map(country =>({
     label: country.text,
     value: country.id,
   }));
 
-  const resHsProducts = hsProducts.map(country =>({
-    label: country.text,
-    value: country.id,
-  }));
-
-  const resSitcProducts = sitcProducts.map(country =>({
-    label: country.text,
-    value: country.id,
-  }));
-
-  const resEbopsService = ebopsService.map(country =>({
+  const resService = services.map(country =>({
     label: country.text,
     value: country.id,
   }));
@@ -347,7 +338,7 @@ function App() {
         value={typeCodeValue}
         onChange={(event, newValue) => setTypeCodeValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+        renderInput={(params) => <TextField {...params} label="Type Code" />}
       />
       <Autocomplete
         disablePortal
@@ -355,7 +346,7 @@ function App() {
         value={freqCodeValue}
         onChange={(event, newValue) => setFreqCodeValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+        renderInput={(params) => <TextField {...params} label="Frequency Code" />}
       />
       <Autocomplete
         disablePortal
@@ -363,7 +354,15 @@ function App() {
         value={clCodeValue}
         onChange={(event, newValue) => setClCodeValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="Report Countries" />}
+        renderInput={(params) => <TextField {...params} label="Trade (IMTS) classifications: HS, SITC, BEC or EBOPS." />}
+      />
+      <Autocomplete
+        disablePortal
+        options={resFlowCode}
+        value={flowCodeValue}
+        onChange={(event, newValue) => setFlowCodeValue(newValue)}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Trade flow or sub-flow (imports, exports)" />}
       />
       <Autocomplete
         disablePortal
@@ -373,7 +372,14 @@ function App() {
         sx={{ width: 300 }}
         renderInput={(params) => <TextField {...params} label="Report Countries" />}
       />
-      <BasicDateField />
+      <Autocomplete
+        disablePortal
+        options={resPeriod}
+        value={dateValue}
+        onChange={(event, newValue) => setDateValue(newValue)}
+        sx={{ width: 300 }}
+        renderInput={(params) => <TextField {...params} label="Period" />}
+      />
       <Autocomplete
         disablePortal
         options={resPartnerCountries}
@@ -408,35 +414,19 @@ function App() {
       />
       <Autocomplete
         disablePortal
-        options={resBecProducts}
-        value={becProductsValue}
-        onChange={(event, newValue) => setBecProductsValue(newValue)}
+        options={resProducts}
+        value={productsValue}
+        onChange={(event, newValue) => setProductsValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="BEC Products" />}
+        renderInput={(params) => <TextField {...params} label="Products" />}
       />
       <Autocomplete
         disablePortal
-        options={resHsProducts}
-        value={hsProductsValue}
-        onChange={(event, newValue) => setHsProductsValue(newValue)}
+        options={resService}
+        value={serviceValue}
+        onChange={(event, newValue) => setServiceValue(newValue)}
         sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="HS Products" />}
-      />
-      <Autocomplete
-        disablePortal
-        options={resSitcProducts}
-        value={sitcProductsValue}
-        onChange={(event, newValue) => setSitcProductsValue(newValue)}
-        sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="SITC Products" />}
-      />
-      <Autocomplete
-        disablePortal
-        options={resEbopsService}
-        value={ebopsServiceValue}
-        onChange={(event, newValue) => setEbopsServiceValue(newValue)}
-        sx={{ width: 300 }}
-        renderInput={(params) => <TextField {...params} label="EBOPS Service" />}
+        renderInput={(params) => <TextField {...params} label="Service" />}
       />
       <Button onClick={() => handleSubmit()} variant="contained">Download CSV</Button>
       <Button onClick={() => handleSubmit("xlsx")} variant="contained">Download XLSX</Button>

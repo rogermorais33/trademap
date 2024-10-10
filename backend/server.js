@@ -4,7 +4,9 @@ import { createObjectCsvWriter } from "csv-writer";
 import ExcelJS from "exceljs";
 import cors from "cors";
 import axios from "axios";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
 const port = 5000;
 
@@ -16,28 +18,50 @@ app.use(bodyParser.json());
 
 app.post('/convert', async (req, res) => {
     const selectedValues = req.body;
-    const reportCountriesValue =      selectedValues.reportCountriesValue;
-    const partnerCountriesValue =     selectedValues.partnerCountriesValue;
-    const partner2CountriesValue =    selectedValues.partner2CountriesValue;
-    const customCodeCountriesValue =  selectedValues.customCodeCountriesValue;
-    const modeOfTransportCodesValue = selectedValues.modeOfTransportCodesValue;
+    const reportCountriesValue =        selectedValues.reportCountriesValue?.value;
+    const partnerCountriesValue =       selectedValues.partnerCountriesValue?.value;
+    const partner2CountriesValue =      selectedValues.partner2CountriesValue?.value;
+    const customCodeCountriesValue =    selectedValues.customCodeCountriesValue?.value;
+    const modeOfTransportCodesValue =   selectedValues.modeOfTransportCodesValue?.value;
 
-    const becProductsValue =          selectedValues.becProductsValue;
-    const hsProductsValue =           selectedValues.hsProductsValue;
-    const sitcProductsValue =         selectedValues.sitcProductsValue;
-    const ebopsServiceValue =         selectedValues.ebopsServiceValue;
+    const productsValue =               selectedValues.productsValue?.value;
+    const serviceValue =                selectedValues.serviceValue?.value;     
 
-    const typeCodeValue =             selectedValues.typeCodeValue;
-    const freqCodeValue =             selectedValues.freqCodeValue;
-    const clCodeValue =               selectedValues.clCodeValue;
+    const typeCodeValue =               selectedValues.typeCodeValue?.value;
+    const freqCodeValue =               selectedValues.freqCodeValue?.value;
+    const clCodeValue =                 selectedValues.clCodeValue?.value;
+    const period =                      selectedValues.dateValue?.value;
+
+    const flowCode =                    selectedValues.flowCodeValue?.value;
+    const aggregateBy =                 selectedValues.aggregateBy?.value;
+    const breakdownMode =               selectedValues.breakdownMode?.value;
+    const includeDesc =                 selectedValues.includeDesc?.value;
     
-    const aggregateBy = null;
-
+    const cmdCode = productsValue || serviceValue;
     const subscription_key = process.env.SUBSCRIPTION_KEY;
 
     // const comtradeUrl = `https://comtradeapi.un.org/data/v1/get/${typeCodeValue}/${freqCodeValue}/${clCodeValue}?subscription-key=${subscription_key}${reportCountriesValue}&${period}&${partnerCountriesValue}&${partner2CountriesValue}&${cmdCode}&${flowCode}&${customCodeCountriesValue}&${modeOfTransportCodesValue}&${aggregateBy}&${breakdownMode}&${includeDesc}`
 
-    const comtradeUrl = `https://comtradeapi.un.org/data/v1/get/C/A/HS?subscription-key=${subscription_key}&reporterCode=76&period=2023&partnerCode=251`
+    const baseUrl = `https://comtradeapi.un.org/data/v1/get/${typeCodeValue}/${freqCodeValue}/${clCodeValue}?subscription-key=${subscription_key}`;
+
+    const params = [];
+
+    if (reportCountriesValue) params.push(`reportCountries=${reportCountriesValue}`);
+    if (period) params.push(`period=${period}`);
+    if (partnerCountriesValue) params.push(`partnerCountries=${partnerCountriesValue}`);
+    if (partner2CountriesValue) params.push(`partner2Countries=${partner2CountriesValue}`);
+    if (cmdCode) params.push(`cmdCode=${cmdCode}`);
+    if (flowCode) params.push(`flowCode=${flowCode}`);
+    if (customCodeCountriesValue) params.push(`customCodeCountries=${customCodeCountriesValue}`);
+    if (modeOfTransportCodesValue) params.push(`modeOfTransport=${modeOfTransportCodesValue}`);
+    if (aggregateBy) params.push(`aggregateBy=${aggregateBy}`);
+    if (breakdownMode) params.push(`breakdownMode=${breakdownMode}`);
+    if (includeDesc) params.push(`includeDesc=${includeDesc}`);
+
+    const paramString = params.length ? `&${params.join('&')}` : '';
+    const comtradeUrl = `${baseUrl}${paramString}`;
+    
+    // const comtradeUrl = `https://comtradeapi.un.org/data/v1/get/C/A/HS?subscription-key=${subscription_key}&reporterCode=76&period=2023&partnerCode=251`
 
     let data;
     try {
@@ -48,8 +72,6 @@ app.post('/convert', async (req, res) => {
     }
 
     const fileFormat = req.query.format || 'csv';
-
-    console.log("uzuuuU", data)
     if (fileFormat === 'xlsx') {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Data');
