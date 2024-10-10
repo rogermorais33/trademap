@@ -117,10 +117,6 @@ function App() {
       "code": "A",
     },
     {
-      "text": "Quarterly",
-      "code": "Q",
-    },
-    {
       "text": "Monthly",
       "code": "M",
     },
@@ -140,8 +136,8 @@ function App() {
       "code": "BEC",
     },
     {
-      "text": "EBOPS",
-      "code": "EBOPS",
+      "text": "EB",
+      "code": "EB",
     },
   ]
 

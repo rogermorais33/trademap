@@ -46,21 +46,22 @@ app.post('/convert', async (req, res) => {
 
     const params = [];
 
-    if (reportCountriesValue) params.push(`reportCountries=${reportCountriesValue}`);
+    if (reportCountriesValue) params.push(`reporterCode=${reportCountriesValue}`);
     if (period) params.push(`period=${period}`);
-    if (partnerCountriesValue) params.push(`partnerCountries=${partnerCountriesValue}`);
-    if (partner2CountriesValue) params.push(`partner2Countries=${partner2CountriesValue}`);
+    if (partnerCountriesValue) params.push(`partnerCode=${partnerCountriesValue}`);
+    if (partner2CountriesValue) params.push(`partner2Code=${partner2CountriesValue}`);
     if (cmdCode) params.push(`cmdCode=${cmdCode}`);
     if (flowCode) params.push(`flowCode=${flowCode}`);
-    if (customCodeCountriesValue) params.push(`customCodeCountries=${customCodeCountriesValue}`);
-    if (modeOfTransportCodesValue) params.push(`modeOfTransport=${modeOfTransportCodesValue}`);
+    if (customCodeCountriesValue) params.push(`customCode=${customCodeCountriesValue}`);
+    if (modeOfTransportCodesValue) params.push(`motCode=${modeOfTransportCodesValue}`);
     if (aggregateBy) params.push(`aggregateBy=${aggregateBy}`);
     if (breakdownMode) params.push(`breakdownMode=${breakdownMode}`);
     if (includeDesc) params.push(`includeDesc=${includeDesc}`);
 
     const paramString = params.length ? `&${params.join('&')}` : '';
     const comtradeUrl = `${baseUrl}${paramString}`;
-    
+    console.log("url", comtradeUrl)
+
     // const comtradeUrl = `https://comtradeapi.un.org/data/v1/get/C/A/HS?subscription-key=${subscription_key}&reporterCode=76&period=2023&partnerCode=251`
 
     let data;
@@ -71,33 +72,38 @@ app.post('/convert', async (req, res) => {
       console.error('Erro ao fazer a requisição:', error);
     }
 
-    const fileFormat = req.query.format || 'csv';
-    if (fileFormat === 'xlsx') {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Data');
-
-        worksheet.columns = Object.keys(data[0]).map(key => ({ header: key, key }));
-
-        data.forEach(item => {
-          worksheet.addRow(item);
-        });
-
-        res.setHeader('Content-Disposition', 'attachment; filename=data.xlsx');
-        await workbook.xlsx.write(res);
-        res.end();
-    } else {
-        const csvWriter = createObjectCsvWriter({
-            path: 'data.csv',
-            header: Object.keys(data[0]).map(key => ({ id: key, title: key })),
-        });
-
-        await csvWriter.writeRecords(data);
-
-        res.download('data.csv', 'data.csv', (err) => {
-            if (err) {
-                console.error(err);
-            }
-        });
+    try {
+        const fileFormat = req.query.format || 'csv';
+        if (fileFormat === 'xlsx') {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Data');
+    
+            worksheet.columns = Object.keys(data[0]).map(key => ({ header: key, key }));
+    
+            data.forEach(item => {
+              worksheet.addRow(item);
+            });
+    
+            res.setHeader('Content-Disposition', 'attachment; filename=data.xlsx');
+            await workbook.xlsx.write(res);
+            res.end();
+        } else {
+            const csvWriter = createObjectCsvWriter({
+                path: 'data.csv',
+                header: Object.keys(data[0]).map(key => ({ id: key, title: key })),
+            });
+    
+            await csvWriter.writeRecords(data);
+    
+            res.download('data.csv', 'data.csv', (err) => {
+                if (err) {
+                    console.error(err);
+                }
+            });
+        }
+    } catch {
+        console.log("Data:", data);
+        console.error("Error writing file");
     }
 });
 
