@@ -29,9 +29,9 @@ app.post('/convert', async (req, res) => {
     const productsValue =               selectedValues.productsValue?.value;
     const serviceValue =                selectedValues.serviceValue?.value;     
 
-    const typeCodeValue =               selectedValues.typeCodeValue?.value;
-    const freqCodeValue =               selectedValues.freqCodeValue?.value;
-    const clCodeValue =                 selectedValues.clCodeValue?.value;
+    const typeCodeValue =               selectedValues.typeCodeValue;
+    const freqCodeValue =               selectedValues.freqCodeValue;
+    const clCodeValue =                 selectedValues.clCodeValue;
     const period =                      selectedValues.dateValue?.value;
 
     const flowCode =                    selectedValues.flowCodeValue?.value;
