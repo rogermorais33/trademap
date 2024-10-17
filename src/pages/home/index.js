@@ -246,7 +246,7 @@ function App() {
 
   useEffect(() => {
     periodToFetch();
-  }, [freqCodeValue])
+  }, [periodToFetch])
 
   const resTypeCode = typeCode.map(country =>({
     label: country.text,
