@@ -16,6 +16,8 @@ const port = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
+const COMTRADE_BASE_URL = "https://comtradeapi.un.org/files/v1/app/reference";
+
 app.post('/convert', async (req, res) => {
     const selectedValues = req.body;
     const reportCountriesValue =        selectedValues.reportCountriesValue?.value;
@@ -106,6 +108,80 @@ app.post('/convert', async (req, res) => {
         console.error("Error writing file");
     }
 });
+
+app.get("/reporters", async (req, res) => {
+    try {
+        const response = await axios.get(`${COMTRADE_BASE_URL}/Reporters.json`);
+        return res.send(response.data);
+    } catch (error) {
+        console.error("Erro ao fazer a requisição", error);
+        return res.status(500).json({ error: "Erro ao buscar os dados"})
+    }
+})
+
+app.get("/partners", async (req, res) => {
+    try {
+        const response = await axios.get(`${COMTRADE_BASE_URL}/partnerAreas.json`);
+        return res.send(response.data);
+    } catch (error) {
+        console.error("Erro ao fazer a requisição", error);
+        return res.status(500).json({ error: "Erro ao buscar os dados"})
+    }
+})
+
+app.get("/custom_code", async (req, res) => {
+    try {
+        const response = await axios.get(`${COMTRADE_BASE_URL}/CustomsCodes.json`);
+        return res.send(response.data);
+    } catch (error) {
+        console.error("Erro ao fazer a requisição", error);
+        return res.status(500).json({ error: "Erro ao buscar os dados"})
+    }
+})
+
+app.get("/motc", async (req, res) => {
+    try {
+        const response = await axios.get(`${COMTRADE_BASE_URL}/ModeOfTransportCodes.json`);
+        return res.send(response.data);
+    } catch (error) {
+        console.error("Erro ao fazer a requisição", error);
+        return res.status(500).json({ error: "Erro ao buscar os dados"})
+    }
+})
+
+app.get("/products", async (req, res) => {
+    const products_urls = [
+      `${COMTRADE_BASE_URL}/HS.json`,
+      `${COMTRADE_BASE_URL}/B4.json`,
+      `${COMTRADE_BASE_URL}/B5.json`,
+      `${COMTRADE_BASE_URL}/SS.json`,
+    ]
+    const fetchRequests = products_urls.map(url => axios.get(url));
+    Promise.all(fetchRequests)
+      .then(responses => {
+        const combinedProducts = responses.reduce((acc, response) => {
+            return acc.concat(response.data.results);
+        }, []);
+        return res.send(combinedProducts)
+      })
+      .catch(error => {
+        console.error('Error fetching the JSON files:', error);
+        return res.status(500).json({ error: "Erro ao buscar os dados" })
+      });
+  }
+)
+
+app.get("/services", async (req, res) => {
+    try {
+        const response = await axios.get(`${COMTRADE_BASE_URL}/EB.json`);
+        return res.send(response.data);
+    } catch (error) {
+        console.error("Erro ao fazer a requisição", error);
+        return res.status(500).json({ error: "Erro ao buscar os dados"})
+    }
+})
+
+
 
 app.listen(port, () => {
     console.log(`API rodando em http://localhost:${port}`);

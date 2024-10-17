@@ -153,6 +153,8 @@ function App() {
     },
   ]
 
+  const API_URL = "http://localhost:5000";
+
   function periodToFetch() {
     const currentYear = new Date().getFullYear();
     const period = [];
@@ -178,83 +180,59 @@ function App() {
     setPeriod(period);
   }
 
-  function fetchReporters() {
-    axios.get('Reporters.json')
-      .then(response => {
-        setReportCountries((response.data.results))
-      })
-      .catch(error => {
-        console.error('Erro ao fazer a requisição:', error);
-      });
+  async function fetchReporters() {
+    try {
+      const response = await axios.get(`${API_URL}/reporters`);
+      setReportCountries(response.data.results);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
   }
 
-  function fetchPartners() {
-    axios.get('partnerAreas.json') 
-      .then(response => {
-        setPartnerCountries((response.data.results))
-      })
-      .catch(error => {
-        console.error('Erro ao fazer a requisição:', error);
-      });
+  async function fetchPartners() {
+    try {
+      const response = await axios.get(`${API_URL}/partners`);
+      setPartnerCountries(response.data.results);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
   }
 
-  function fetchCustomCode() {
-    axios.get('CustomsCodes.json') 
-      .then(response => {
-        setCustomCodeCountries((response.data.results))
-      })
-      .catch(error => {
-        console.error('Erro ao fazer a requisição:', error);
-      });
+  async function fetchCustomCode() {
+    try {
+      const response = await axios.get(`${API_URL}/custom_code`);
+      console.log("response https://comtradeapi.un.org/files/v1/app/reference/CustomsCodes.json ", response)
+      setCustomCodeCountries(response.data.results);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
+  }
+  
+  async function fetchModeOfTransportCodes() {
+    try {
+      const response = await axios.get(`${API_URL}/motc`);
+      setModeOfTransportCodes(response.data.results);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
+  }
+  
+  async function fetchProducts() {
+    try {
+      const response = await axios.get(`${API_URL}/products`);
+      setProducts(response.data);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
   }
 
-  function fetchModeOfTransportCodes() {
-    axios.get('ModeOfTransportCodes.json') 
-      .then(response => {
-        setModeOfTransportCodes((response.data.results))
-      })
-      .catch(error => {
-        console.error('Erro ao fazer a requisição:', error);
-      });
-  }
-
-  function fetchProducts() {
-    const products_urls = [
-      "HS.json",
-      "B4.json",
-      "B5.json",
-      "SS.json",
-    ]
-    const fetchRequests = products_urls.map(url => axios.get(url));
-    Promise.all(fetchRequests)
-      .then(responses => {
-        const combinedProducts = responses.reduce((acc, response) => {
-          return acc.concat(response.data.results);
-        }, []);
-
-        setProducts(combinedProducts);
-      })
-      .catch(error => {
-        console.error('Error fetching the JSON files:', error);
-      });
-  }
-
-  function fetchServices() {
-    const services_url = [
-      "EB.json",      
-    ]
-    const fetchRequests = services_url.map(url => axios.get(url));
-    Promise.all(fetchRequests)
-      .then(responses => {
-        const combinedProducts = responses.reduce((acc, response) => {
-          return acc.concat(response.data.results);
-        }, []);
-
-        setServices(combinedProducts);
-      })
-      .catch(error => {
-        console.error('Error fetching the JSON files:', error);
-      });
+  async function fetchServices() {
+    try {
+      const response = await axios.get(`${API_URL}/services`);
+      setServices(response.data.results);
+    } catch (err) {
+      console.error("Erro ao fazer a requisição", err);
+    }
   }
 
   useEffect(() => {
