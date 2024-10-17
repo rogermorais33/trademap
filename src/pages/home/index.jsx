@@ -306,9 +306,9 @@ function App() {
 
   return (
     <Grid container direction={"column"} paddingInline={"20%"} paddingBlock={"5%"} gap={"48px"}>
-      <Typography variant="h3" fontFamily={"gantari"} fontWeight={100}>TradeMar</Typography>
+      <Typography color="#ffffff" variant="h3" fontFamily={"gantari"} fontWeight={100}>TradeMar</Typography>
       <Grid container direction={"column"} gap={"24px"}>
-        <Typography variant="h5" fontFamily={"gantari"} fontWeight={100}>What are you looking for?</Typography>
+        <Typography color="#ffffff" variant="h5" fontFamily={"gantari"} fontWeight={100}>What are you looking for?</Typography>
         <Grid container direction={"row"} spacing={2} height={"56px"}>
           <Grid>
             <ToggleButtonGroup
@@ -356,7 +356,7 @@ function App() {
       </Grid>
 
       <Grid container direction={"column"} gap={"24px"}>
-        <Typography variant="h5" fontFamily={"gantari"} fontWeight={100}>Refine your serach:</Typography>
+        <Typography color="#ffffff" variant="h5" fontFamily={"gantari"} fontWeight={100}>Refine your serach:</Typography>
 
         <Grid container spacing={2}>
           <Grid size={6}>
