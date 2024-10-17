@@ -6,7 +6,7 @@ function ChartCard(data, type) {
     backgroundColor: "none",
   };
   return (
-        <Card sx={{borderRadius: "24px", padding: "24px", background: "rgba(0, 0, 0, 0.28)", boxShadow:"0 4px 30px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(6.9px)", WebkitBackdropFilter: "blur(6.9px)"}}>
+        <Card sx={{borderRadius: "24px", padding: "24px", background: "linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 35%, rgba(0,212,255,1) 100%)", boxShadow:"0 4px 30px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(6.9px)", WebkitBackdropFilter: "blur(6.9px)"}}>
           <Chart
             options={options}
             chartEvents={[
