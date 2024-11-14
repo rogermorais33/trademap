@@ -12,5 +12,5 @@ app.use(bodyParser.json());
 setupRoutes(app);
 
 app.listen(port, () => {
-  console.log(`API rodando em http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });

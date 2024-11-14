@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { QueryParams, RequestBody } from '../types';
 import { fetchData } from '../services/comtradeService';
-import { writeToCsv, writeToExcel } from '../services/fileService';
+import { getFileFromDatabase, writeToCsv, writeToExcel } from '../services/fileService';
 
 export const handleComtradeExport = async (req: Request<{}, {}, RequestBody, QueryParams>, res: Response) => {
   let data = [];
@@ -20,5 +20,19 @@ export const handleComtradeExport = async (req: Request<{}, {}, RequestBody, Que
   } catch {
     console.log('Data:', data);
     console.error('Error writing file');
+  }
+};
+
+export const getFile = async (req: any, res: any) => {
+  const { id } = req.params;
+
+  try {
+    const file = await getFileFromDatabase(Number(id));
+
+    res.setHeader('Content-Type', file.tipo);
+    res.setHeader('Content-Disposition', `attachment; filename=${file.nome}`);
+    res.send(file.conteudo);
+  } catch (error) {
+    res.status(500).send('Erro ao recuperar o arquivo.');
   }
 };

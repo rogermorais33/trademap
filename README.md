@@ -1,70 +1,89 @@
-# Getting Started with Create React App
+# Project TradeMap
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este projeto tem como objetivo buscar dados da ComtradeAPI, processá-los no backend e gerar arquivos CSV ou XLS com as informações recuperadas. O frontend é desenvolvido em React puro e permite ao usuário selecionar filtros e parâmetros para refinar sua pesquisa, enquanto o backend é responsável por processar as requisições e interagir com a ComtradeAPI.
 
-## Available Scripts
+## Arquitetura do Projeto
 
-In the project directory, you can run:
+O projeto é dividido em duas partes principais:
 
-### `npm start`
+1. **Frontend** - Responsável pela interface do usuário e pela interação com o backend.
+2. **Backend** - Responsável pela lógica de negócios, comunicação com a ComtradeAPI e geração dos arquivos de saída.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Fluxo do Sistema
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. O usuário interage com o frontend, selecionando filtros e parâmetros para refinar a pesquisa.
+2. O frontend envia esses parâmetros ao backend via uma requisição HTTP.
+3. O backend usa a ComtradeAPI para buscar os dados conforme os filtros fornecidos.
+4. O backend processa os dados e gera um arquivo CSV ou XLS.
+5. O usuário pode então fazer o download do arquivo gerado.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Frontend
 
-### `npm run build`
+O frontend é desenvolvido utilizando **React** e é responsável por fornecer a interface para o usuário selecionar os parâmetros de pesquisa.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Descrição do Frontend
+- React: Biblioteca principal utilizada para criar a interface do usuário.
+- Axios: Biblioteca para fazer requisições HTTP ao backend.
+- MUI (Material-UI): Framework de componentes React que facilita a criação da interface do usuário.
+- React Router Dom: Usada para navegação entre diferentes páginas da aplicação.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Backend
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+O backend é desenvolvido utilizando Node.js com TypeScript e é responsável por processar as requisições do frontend, acessar a ComtradeAPI e gerar os arquivos CSV ou XLS.
 
-### `npm run eject`
+### Descrição do Backend
+- Express: Framework para construção de APIs RESTful.
+- Axios: Biblioteca para fazer requisições HTTP à ComtradeAPI.
+- CSV-Writer: Biblioteca para escrever arquivos CSV.
+- ExcelJS: Biblioteca para gerar arquivos XLS.
+- TypeScript: Usado para garantir tipos fortes e melhor escalabilidade do código.
+- CORS: Usado para habilitar comunicação entre diferentes origens (entre frontend e backend).
+- pg: Cliente PostgreSQL, caso o sistema precise armazenar dados em banco de dados.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Como Rodar o Projeto
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Frontend
+Navegue até a pasta do frontend: `cd frontend`
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Instale as dependências: `npm install`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Inicie o servidor de desenvolvimento: `npm start`
 
-## Learn More
+A aplicação estará disponível em http://localhost:3000.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Backend
+Navegue até a pasta do backend: `cd backend`
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Instale as dependências: `npm install`
 
-### Code Splitting
+Crie o arquivo .env com a subscription key, seguindo o .env.example `SUBSCRIPTION_KEY=subscription_key`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Inicie o servidor backend: `npm run dev`
 
-### Analyzing the Bundle Size
+O backend estará rodando em http://localhost:5000.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Rodar com o docker
+- `docker compose up -d`
+- A aplicação estará disponível em http://localhost:3000.
+- O backend estará rodando em http://localhost:5000.
 
-### Making a Progressive Web App
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Fluxo de Dados
+- Frontend: O usuário seleciona filtros (ex: país, ano, produto) e envia a requisição ao backend.
+- Backend:
+    - O backend recebe os parâmetros do frontend.
+    - Faz uma requisição à ComtradeAPI usando os parâmetros fornecidos.
+    - Processa os dados e gera um arquivo CSV ou XLS.
+- Frontend: O arquivo gerado é enviado ao frontend, que disponibiliza um link para o download.
 
-### Advanced Configuration
+## Referência das Tabelas (ComtradeAPI)
+- Para melhor compreensão e uso das tabelas de referência fornecidas pela ComtradeAPI, você pode consultar o arquivo JSON da lista de todas as tabelas de referência através do seguinte endpoint da ComtradeAPI:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+- [List of Reference Tables](https://comtradeapi.un.org/files/v1/app/reference/ListofReferences.json).
 
-### Deployment
+- Este JSON contém informações sobre os parâmetros que são utilizados nas requests para a API.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Documentação da API
+- [Documentação Backend](backend/README.md)

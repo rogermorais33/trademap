@@ -1,0 +1,39 @@
+services:
+  frontend:
+    container_name: frontend-container
+    build:
+      context: ./
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/frontend
+
+  backend:
+    container_name: backend-container
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    container_name: trademap-container
+    environment:
+      POSTGRES_USER: trademapUser
+      POSTGRES_PASSWORD: trademapPassword
+      POSTGRES_DB: trademapDB
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+    driver: local
