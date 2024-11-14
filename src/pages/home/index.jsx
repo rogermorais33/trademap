@@ -7,18 +7,18 @@ import useApi from '../../hooks/useApi';
 import AutocompleteInput from '../../components/AutocompleteInput';
 
 function App() {
-  const [reportCountriesValue, setReportCountriesValue] = useState(null);
-  const [partnerCountriesValue, setPartnerCountriesValue] = useState(null);
-  const [partner2CountriesValue, setPartner2CountriesValue] = useState(null);
-  const [customCodeCountriesValue, setCustomCodeCountriesValue] = useState(null);
-  const [modeOfTransportCodesValue, setModeOfTransportCodesValue] = useState(null);
-  const [productsValue, setProductsValue] = useState(null);
-  const [serviceValue, setServiceValue] = useState(null);
+  const [reportCountriesValue, setReportCountriesValue] = useState([]);
+  const [partnerCountriesValue, setPartnerCountriesValue] = useState([]);
+  const [partner2CountriesValue, setPartner2CountriesValue] = useState([]);
+  const [customCodeCountriesValue, setCustomCodeCountriesValue] = useState([]);
+  const [modeOfTransportCodesValue, setModeOfTransportCodesValue] = useState([]);
+  const [productsValue, setProductsValue] = useState([]);
+  const [serviceValue, setServiceValue] = useState([]);
   const [typeCodeValue, setTypeCodeValue] = useState('C');
   const [freqCodeValue, setFreqCodeValue] = useState('A');
   const [clCodeValue, setClCodeValue] = useState('HS');
-  const [flowCodeValue, setFlowCodeValue] = useState(null);
-  const [period, setPeriod] = useState(null);
+  const [flowCodeValue, setFlowCodeValue] = useState([]);
+  const [period, setPeriod] = useState([]);
 
   const { data: reportCountries } = useApi('reporters');
   const { data: partnerCountries } = useApi('partners');
