@@ -1,4 +1,4 @@
-import { Typography } from '@mui/material';
+import { Button, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 import { useCallback, useEffect, useState } from 'react';
 import ToggleButtonInput from '../../components/ToggleButtonInput';
@@ -100,6 +100,44 @@ function App() {
         a.style.display = 'none';
         a.href = url;
         a.download = format === 'xlsx' ? 'data.xlsx' : 'data.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((error) => console.error('Error:', error));
+  }
+
+  function manyFiles(format) {
+    const selectedValues = {
+      reportCountriesValue,
+      partnerCountriesValue,
+      partner2CountriesValue,
+      customCodeCountriesValue,
+      modeOfTransportCodesValue,
+      productsValue,
+      serviceValue,
+      typeCodeValue,
+      freqCodeValue,
+      clCodeValue,
+      period,
+      flowCodeValue,
+    };
+    console.log('testing', selectedValues);
+
+    fetch(`http://localhost:5000/downloadZip${format ? '?format=' + format : ''}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedValues),
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'data.zip';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -228,6 +266,11 @@ function App() {
       <Grid container spacing={2}>
         <DownloadButton onClick={handleSubmit} format="csv" />
         <DownloadButton onClick={handleSubmit} format="xlsx" />
+      </Grid>
+      <Grid container spacing={2}>
+        <Button onClick={() => manyFiles("csv")} variant='contained'>
+          Download Many Files (CSV)
+        </Button>
       </Grid>
     </Grid>
   );

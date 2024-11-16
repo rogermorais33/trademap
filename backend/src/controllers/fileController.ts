@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { QueryParams, RequestBody } from '../types';
-import { fetchData } from '../services/comtradeService';
+import { fetchData, generateURLs } from '../services/comtradeService';
 import { getFileFromDatabase, writeToCsv, writeToExcel } from '../services/fileService';
 
 export const handleComtradeExport = async (req: Request<{}, {}, RequestBody, QueryParams>, res: Response) => {
@@ -23,7 +23,7 @@ export const handleComtradeExport = async (req: Request<{}, {}, RequestBody, Que
   }
 };
 
-export const getFile = async (req: any, res: any) => {
+export const getFile = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
@@ -36,3 +36,12 @@ export const getFile = async (req: any, res: any) => {
     res.status(500).send('Erro ao recuperar o arquivo.');
   }
 };
+
+export const manyFilesZip = async (req: Request<{}, {}, RequestBody, QueryParams>, res: Response) => {
+  let data = [];
+  try {
+    await generateURLs(req.body, res);
+  } catch (error) {
+    console.error('Request failed:', error);
+  }
+}

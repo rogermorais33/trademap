@@ -2,7 +2,8 @@ import { Pool } from 'pg';
 
 const pool = new Pool({
   user: 'trademapUser',
-  host: 'trademap-container', // Local: localhost - container: trademap-container
+  // host: 'trademap-container', // Local: localhost - container: trademap-container
+  host: 'localhost', // Local: localhost - container: trademap-container
   database: 'trademapDB',
   password: 'trademapPassword',
   port: 5432,

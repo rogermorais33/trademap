@@ -4,6 +4,13 @@ import { createObjectCsvWriter } from 'csv-writer';
 import db from '../config/db';
 import { PoolClient } from 'pg';
 import fs from 'fs';
+import path from 'path';
+import archiver from 'archiver';
+
+interface CsvData {
+  data: any[];
+  filename: string;
+}
 
 const createTableIfNotExists = async () => {
   const client: PoolClient = await db.connect();
@@ -58,6 +65,118 @@ export const getFileFromDatabase = async (id: number) => {
   } finally {
     client.release();
   }
+};
+
+export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
+  try {
+    console.log('Starting CSV processing. Quantity:', csvDataArray.length);
+    
+    const tempDir = path.join(__dirname, 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+      console.log('Temporary directory created:', tempDir);
+    }
+    const createdCsvPaths: string[] = [];
+
+    for (const [index, csvData] of csvDataArray.entries()) {
+      console.log(`Processing CSV ${index + 1}/${csvDataArray.length}`);
+      
+      if (!csvData.data || !Array.isArray(csvData.data) || csvData.data.length === 0) {
+        console.error(`Invalid data for CSV ${index}:`, csvData);
+        continue;
+      }
+
+      try {
+        const csvPath = path.join(tempDir, csvData.filename || `data_${index}.csv`);
+        console.log('Trying to create CSV at:', csvPath);
+        console.log('First data:', JSON.stringify(csvData.data[0]));
+
+        const headers = Object.keys(csvData.data[0]).map(key => ({
+          id: key,
+          title: key
+        }));        
+        console.log('Identified headers:', headers);
+
+        const csvWriter = createObjectCsvWriter({
+          path: csvPath,
+          header: headers
+        });
+
+        console.log(`Writing ${csvData.data.length} records...`);
+        await csvWriter.writeRecords(csvData.data);
+
+        if (fs.existsSync(csvPath)) {
+          const stats = fs.statSync(csvPath);
+          console.log(`CSV created successfully. Size: ${stats.size} bytes`);
+          createdCsvPaths.push(csvPath);
+        } else {
+          console.error('CSV not created:', csvPath);
+        }
+
+      } catch (csvError) {
+        console.error(`Error creating CSV ${index}:`, csvError);
+      }
+    }
+
+    if (createdCsvPaths.length === 0) {
+      throw new Error('No CSV file was created successfully');
+    }
+
+    console.log('Starting ZIP Creation');
+    const zipPath = path.join(tempDir, 'data.zip');
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+    archive.pipe(output);
+
+    for (const csvPath of createdCsvPaths) {
+      const filename = path.basename(csvPath);
+      console.log(`Adding ${filename} to ZIP`);
+      archive.file(csvPath, { name: filename });
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      output.on('close', () => {
+        console.log('ZIP created successfully');
+        resolve();
+      });
+      archive.on('error', reject);
+      archive.finalize();
+    });
+
+    console.log('Sending ZIP to the client');
+    res.download(zipPath, 'data.zip', (err) => {
+      if (err) {
+        console.error('Error sending ZIP:', err);
+      }
+
+      console.log('Cleaning up temporary files');
+      createdCsvPaths.forEach(csvPath => {
+        try {
+          fs.unlinkSync(csvPath);
+          console.log(`File removed: ${csvPath}`);
+        } catch (e) {
+          console.error(`Error removing file ${csvPath}:`, e);
+        }
+      });
+    
+      try {
+        fs.unlinkSync(zipPath);
+        console.log('ZIP file removed');
+      } catch (e) {
+        console.error('Error removing ZIP file:', e);
+      }
+    });
+    
+    } catch (error) {
+      console.error('Process error:', error);
+      if (!res.headersSent) {
+        res.status(500).send('Error processing files');
+      }
+    }
 };
 
 export const writeToCsv = async (data: any[], res: Response) => {
