@@ -2,6 +2,7 @@ import axios from 'axios';
 import { RequestBody } from '../types';
 import dotenv from 'dotenv';
 import { writeToZip } from './fileService';
+import { saveTradeData } from './tradeService';
 
 dotenv.config();
 
@@ -47,7 +48,11 @@ export async function fetchData(dataBody: RequestBody): Promise<any[]> {
     console.log(`\nFINAL URL: ${comtradeUrl}\n`);
 
     const response = await axios.get(comtradeUrl);
-    return response.data.data;
+    const data = response.data.data;
+
+    await saveTradeData(data);
+
+    return data;
   } catch (error) {
     throw new Error(`Failed to fetch data`);
   }
@@ -62,15 +67,15 @@ export async function fetchReferenceData(fileName: string): Promise<any> {
   }
 }
 
-export async function fetchProducts(): Promise<any[]> {
+export async function fetchProducts(productType: 'HS' | 'SITC' | 'BEC'): Promise<any[]> {
   try {
-    const productUrls = [
-      `${COMTRADE_BASE_URL}/HS.json`,
-      `${COMTRADE_BASE_URL}/B4.json`,
-      `${COMTRADE_BASE_URL}/B5.json`,
-      `${COMTRADE_BASE_URL}/SS.json`,
-    ];
-    const responses = await Promise.all(productUrls.map((url) => axios.get(url)));
+    const allProducts = {
+      HS: [`${COMTRADE_BASE_URL}/HS.json`],
+      SITC: [`${COMTRADE_BASE_URL}/SS.json`],
+      BEC: [`${COMTRADE_BASE_URL}/B4.json`, `${COMTRADE_BASE_URL}/B5.json`],
+    };
+    const selectedProductsUrls = allProducts[productType];
+    const responses = await Promise.all(selectedProductsUrls.map((url) => axios.get(url)));
     return responses.flatMap((response) => response.data.results);
   } catch (error) {
     throw new Error('Failed to fetch product data');
@@ -128,13 +133,13 @@ export const generateParams = (body: any) => {
 const cleanParams = (params: ParamsType): ParamsType => {
   const cleanedParams = { ...params };
   for (const key in cleanedParams) {
-    if (cleanedParams[key] === undefined) {
+    if (cleanedParams[key] === undefined || cleanedParams[key] === null) {
       delete cleanedParams[key];
       continue;
     }
     if (Array.isArray(cleanedParams[key])) {
       cleanedParams[key] = cleanedParams[key].filter((item: any) => item !== undefined);
-      
+
       if (cleanedParams[key].length === 0) {
         delete cleanedParams[key];
       }
@@ -165,7 +170,7 @@ export async function generateURLs(dataBody: any, res: any) {
       : Array.isArray(serviceValue) && serviceValue.length > 0
         ? serviceValue
         : [];
-  
+
   const params: ParamsType = {
     reporterCode: reportCountriesValue,
     partnerCode: partnerCountriesValue,
@@ -179,20 +184,21 @@ export async function generateURLs(dataBody: any, res: any) {
     breakdownMode: breakdownMode,
     includeDesc: includeDesc,
   };
-  
-  const cleanedParams = cleanParams(params)
+  console.log('MANY FILES - PARAMS: ', params);
+
+  const cleanedParams = cleanParams(params);
   const allUrls = generateAllCombinations(cleanedParams);
 
   try {
     await makeRequestsWithDelay(allUrls, dataBody, 10000, res);
   } catch (error) {
-    console.error('Erro ao processar as requisições:', error);
+    console.error('Error processing requests:', error);
   }
 }
 
 function generateAllCombinations(params: ParamsType): string[] {
   const entries = Object.entries(params);
-  
+
   function combine(index: number, current: CurrentCombination): string[] {
     if (index === entries.length) {
       const queryString = Object.entries(current)
@@ -206,61 +212,61 @@ function generateAllCombinations(params: ParamsType): string[] {
     for (const value of values) {
       const combinations = combine(index + 1, {
         ...current,
-        [key]: value
+        [key]: value,
       });
       results.push(...combinations);
-    } 
+    }
     return results;
-  } 
+  }
   return combine(0, {});
 }
 
 const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 const makeRequestsWithDelay = async (
-  allUrls: string[], 
+  allUrls: string[],
   dataBody: DataBody,
   delayMs: number = 10000,
-  res: any
+  res: any,
 ): Promise<void> => {
   console.log('Total Combinations:', allUrls.length);
   console.log(`Delay between requests: ${delayMs}ms`);
-  
+
   let allResponses = [];
   for (let [index, url] of allUrls.entries()) {
     let response;
     try {
       console.log(`\nMaking requests ${index + 1} of ${allUrls.length}`);
-      
+
       const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCodeValue}/${dataBody.freqCodeValue}/${dataBody.clCodeValue}`;
       const comtradeUrl = `${baseUrl}?${url}`;
       console.log(`URL: ${comtradeUrl}\n`);
-      
+
       response = await axios.get(comtradeUrl);
       allResponses.push({
         data: response.data.data,
-        filename: `comtrade_data_${index}.csv`
+        filename: `comtrade_data_${index}.csv`,
       });
-      
+
       if (index < allUrls.length - 1) {
-        console.log(`Waiting ${delayMs/1000} seconds before next request...`);
+        console.log(`Waiting ${delayMs / 1000} seconds before next request...`);
         await delay(delayMs);
       }
     } catch (error: any) {
-      console.log("Last response received:", response?.data);
+      console.log('Last response received:', response?.data);
       console.error('Error in request:', error.message);
-      
+
       if (error.response?.status === 429) {
         console.log('Rate limit reached. Increasing delay and trying again...');
-        await delay(delayMs * 2); 
-        index--; 
+        await delay(delayMs * 2);
+        index--;
       }
     }
   }
   if (allResponses.length > 0) {
-    console.log("Writing the zip")
+    console.log('Writing the zip');
     await writeToZip(allResponses, res);
   }
   console.log('\nAll requests have been completed!');

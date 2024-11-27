@@ -29,19 +29,18 @@ export const getFile = async (req: Request, res: Response) => {
   try {
     const file = await getFileFromDatabase(Number(id));
 
-    res.setHeader('Content-Type', file.tipo);
-    res.setHeader('Content-Disposition', `attachment; filename=${file.nome}`);
-    res.send(file.conteudo);
+    res.setHeader('Content-Type', file.type);
+    res.setHeader('Content-Disposition', `attachment; filename=${file.name}`);
+    res.send(file.content);
   } catch (error) {
-    res.status(500).send('Erro ao recuperar o arquivo.');
+    res.status(500).send('Error retrieving file.');
   }
 };
 
 export const manyFilesZip = async (req: Request<{}, {}, RequestBody, QueryParams>, res: Response) => {
-  let data = [];
   try {
     await generateURLs(req.body, res);
   } catch (error) {
     console.error('Request failed:', error);
   }
-}
+};

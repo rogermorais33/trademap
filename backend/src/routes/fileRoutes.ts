@@ -4,5 +4,5 @@ import { getFile, handleComtradeExport, manyFilesZip } from '../controllers/file
 export function fileRoutes(app: Express): void {
   app.post('/convert', handleComtradeExport);
   app.get('/getFile/:id', getFile);
-  app.post('/downloadZip', manyFilesZip)
+  app.post('/downloadZip', manyFilesZip);
 }

@@ -3,14 +3,16 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:5000';
 
-const useApi = (endpoint) => {
+const useApi = (endpoint, params = {}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get(`${API_URL}/${endpoint}`);
+        console.log('PARAMS: ', params);
+        const response = await axios.get(`${API_URL}/${endpoint}`, { params });
         setData(response.data.results || response.data);
       } catch (err) {
         console.error('Error fetching data', err);
@@ -18,9 +20,8 @@ const useApi = (endpoint) => {
         setLoading(false);
       }
     };
-
     fetchData();
-  }, [endpoint]);
+  }, [endpoint, params.productType]);
 
   return { data, loading };
 };

@@ -1,76 +1,52 @@
 import { Response } from 'express';
 import ExcelJS from 'exceljs';
 import { createObjectCsvWriter } from 'csv-writer';
-import db from '../config/db';
-import { PoolClient } from 'pg';
 import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
+import File from '../models/File';
 
 interface CsvData {
   data: any[];
   filename: string;
 }
 
-const createTableIfNotExists = async () => {
-  const client: PoolClient = await db.connect();
-
+export const saveFileToDatabase = async (name: string, type: string, content: Buffer) => {
   try {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS arquivos (
-        id SERIAL PRIMARY KEY, 
-        nome VARCHAR(255) NOT NULL, 
-        tipo TEXT NOT NULL, 
-        conteudo BYTEA NOT NULL 
-      );
-    `;
-    await client.query(createTableQuery);
+    const newFile = await File.create({
+      name,
+      type,
+      content,
+    });
+    console.log('File save successfully:', newFile);
+    return newFile;
   } catch (err) {
-    console.error('Error creating table:', err);
-    throw new Error('Error creating table.');
-  } finally {
-    client.release();
-  }
-};
-
-const saveFileToDatabase = async (nome: string, tipo: string, conteudo: Buffer) => {
-  const client: PoolClient = await db.connect();
-  try {
-    await createTableIfNotExists();
-    const query = 'INSERT INTO arquivos (nome, tipo, conteudo) VALUES ($1, $2, $3)';
-    await client.query(query, [nome, tipo, conteudo]);
-  } catch (err) {
-    console.error('Erro ao salvar arquivo no banco:', err);
-    throw new Error('Erro ao salvar arquivo no banco.');
-  } finally {
-    client.release();
+    console.error('Error saving file to database', err);
+    throw new Error('Error saving file to database');
   }
 };
 
 export const getFileFromDatabase = async (id: number) => {
-  const client: PoolClient = await db.connect();
-
   try {
-    const query = 'SELECT nome, tipo, conteudo FROM arquivos WHERE id = $1';
-    const result = await client.query(query, [id]);
-
-    if (result.rows.length > 0) {
-      return result.rows[0];  // Retorna o arquivo encontrado
+    const file = await File.findOne({
+      where: { id },
+    });
+    if (file) {
+      console.log('Recovered file:', file);
+      return file;
+    } else {
+      throw new Error('File not found.');
     }
-
-    throw new Error('Arquivo não encontrado.');
   } catch (err) {
-    console.error('Erro ao recuperar arquivo do banco:', err);
-    throw new Error('Erro ao recuperar arquivo.');
-  } finally {
-    client.release();
+    console.error('Error retrieving file from database:', err);
+    throw new Error('Error retrieving file from database.');
   }
 };
 
 export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
   try {
     console.log('Starting CSV processing. Quantity:', csvDataArray.length);
-    
+
     const tempDir = path.join(__dirname, 'temp');
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
@@ -80,7 +56,7 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
 
     for (const [index, csvData] of csvDataArray.entries()) {
       console.log(`Processing CSV ${index + 1}/${csvDataArray.length}`);
-      
+
       if (!csvData.data || !Array.isArray(csvData.data) || csvData.data.length === 0) {
         console.error(`Invalid data for CSV ${index}:`, csvData);
         continue;
@@ -91,15 +67,15 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
         console.log('Trying to create CSV at:', csvPath);
         console.log('First data:', JSON.stringify(csvData.data[0]));
 
-        const headers = Object.keys(csvData.data[0]).map(key => ({
+        const headers = Object.keys(csvData.data[0]).map((key) => ({
           id: key,
-          title: key
-        }));        
+          title: key,
+        }));
         console.log('Identified headers:', headers);
 
         const csvWriter = createObjectCsvWriter({
           path: csvPath,
-          header: headers
+          header: headers,
         });
 
         console.log(`Writing ${csvData.data.length} records...`);
@@ -112,7 +88,6 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
         } else {
           console.error('CSV not created:', csvPath);
         }
-
       } catch (csvError) {
         console.error(`Error creating CSV ${index}:`, csvError);
       }
@@ -154,7 +129,7 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
       }
 
       console.log('Cleaning up temporary files');
-      createdCsvPaths.forEach(csvPath => {
+      createdCsvPaths.forEach((csvPath) => {
         try {
           fs.unlinkSync(csvPath);
           console.log(`File removed: ${csvPath}`);
@@ -162,7 +137,7 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
           console.error(`Error removing file ${csvPath}:`, e);
         }
       });
-    
+
       try {
         fs.unlinkSync(zipPath);
         console.log('ZIP file removed');
@@ -170,13 +145,12 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
         console.error('Error removing ZIP file:', e);
       }
     });
-    
-    } catch (error) {
-      console.error('Process error:', error);
-      if (!res.headersSent) {
-        res.status(500).send('Error processing files');
-      }
+  } catch (error) {
+    console.error('Process error:', error);
+    if (!res.headersSent) {
+      res.status(500).send('Error processing files');
     }
+  }
 };
 
 export const writeToCsv = async (data: any[], res: Response) => {

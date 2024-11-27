@@ -1,11 +1,26 @@
-import { TextField, Autocomplete, Chip } from '@mui/material';
+import { TextField, Autocomplete, Chip, createFilterOptions } from '@mui/material';
+import { useMemo } from 'react';
 
 const AutocompleteInput = ({ label, value, onChange, options }) => {
-  const handleChange = (event, newValue) => {
-    // Filter out duplicate values
-    const uniqueValues = newValue.filter((val, index, self) => index === self.findIndex((t) => t.value === val.value));
-    onChange(uniqueValues);
-  };
+  // Filter out duplicate values
+  const handleChange = useMemo(
+    () => (event, newValue) => {
+      const uniqueValues = newValue.filter(
+        (val, index, self) => index === self.findIndex((t) => t.value === val.value),
+      );
+      onChange(uniqueValues);
+    },
+    [onChange],
+  );
+
+  const filterOptions = useMemo(
+    () =>
+      createFilterOptions({
+        matchFrom: 'any',
+        limit: 350,
+      }),
+    [],
+  );
 
   return (
     <Autocomplete
@@ -14,9 +29,14 @@ const AutocompleteInput = ({ label, value, onChange, options }) => {
       options={options}
       value={value || []}
       onChange={handleChange}
+      filterOptions={filterOptions}
       renderInput={(params) => <TextField {...params} label={label} />}
       renderTags={(value, getTagProps) =>
-        value.map((option, index) => <Chip key={index} label={option.label} {...getTagProps({ index })} />)
+        // Destructure the props and remove the key
+        value.map((option, index) => {
+          const { key, ...chipProps } = getTagProps({ index });
+          return <Chip key={option.value || index} label={option.label} {...chipProps} />;
+        })
       }
     />
   );

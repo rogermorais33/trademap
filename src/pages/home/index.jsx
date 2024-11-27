@@ -24,7 +24,7 @@ function App() {
   const { data: partnerCountries } = useApi('partners');
   const { data: customCodeCountries } = useApi('custom_code');
   const { data: modeOfTransportCodes } = useApi('motc');
-  const { data: products } = useApi('products');
+  const { data: products, loading } = useApi('products', { productType: clCodeValue });
   const { data: services } = useApi('services');
 
   const availablePeriod = useCallback(() => {
@@ -84,7 +84,7 @@ function App() {
       period,
       flowCodeValue,
     };
-    console.log('testing', selectedValues);
+    console.log('Selected values: ', selectedValues);
 
     fetch(`http://localhost:5000/convert${format ? '?format=' + format : ''}`, {
       method: 'POST',
@@ -122,7 +122,7 @@ function App() {
       period,
       flowCodeValue,
     };
-    console.log('testing', selectedValues);
+    console.log('Selected Values for manyFiles', selectedValues);
 
     fetch(`http://localhost:5000/downloadZip${format ? '?format=' + format : ''}`, {
       method: 'POST',
@@ -163,7 +163,14 @@ function App() {
           <Grid>
             <ToggleButtonInput
               value={typeCodeValue}
-              onChange={setTypeCodeValue}
+              onChange={(newValue) => {
+                setTypeCodeValue(newValue);
+                if (newValue === 'S') {
+                  setClCodeValue('EB');
+                } else {
+                  setClCodeValue('HS');
+                }
+              }}
               options={[
                 { label: 'Commodities', value: 'C' },
                 { label: 'Services', value: 'S' },
@@ -197,7 +204,15 @@ function App() {
               label={typeCodeValue === 'C' ? 'Products' : 'Service'}
               value={typeCodeValue === 'C' ? productsValue : serviceValue}
               onChange={typeCodeValue === 'C' ? setProductsValue : setServiceValue}
-              options={typeCodeValue === 'C' ? resProducts : resService}
+              options={
+                typeCodeValue === 'C'
+                  ? loading
+                    ? [{ label: 'Loading...', value: 'loading' }]
+                    : resProducts
+                  : loading
+                    ? [{ label: 'Loading...', value: 'loading' }]
+                    : resService
+              }
             />
           </Grid>
           <Grid size={6}>
@@ -268,7 +283,7 @@ function App() {
         <DownloadButton onClick={handleSubmit} format="xlsx" />
       </Grid>
       <Grid container spacing={2}>
-        <Button onClick={() => manyFiles("csv")} variant='contained'>
+        <Button onClick={() => manyFiles('csv')} variant="contained">
           Download Many Files (CSV)
         </Button>
       </Grid>
