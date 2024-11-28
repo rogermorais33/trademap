@@ -82,8 +82,6 @@ O backend estará rodando em http://localhost:5000.
 - Para melhor compreensão e uso das tabelas de referência fornecidas pela ComtradeAPI, você pode consultar o arquivo JSON da lista de todas as tabelas de referência através do seguinte endpoint da ComtradeAPI:
 
 - [List of Reference Tables](https://comtradeapi.un.org/files/v1/app/reference/ListofReferences.json).
+- [Documentação do Comtrade](https://uncomtrade.org/docs/list-of-references-parameter-codes/)
 
 - Este JSON contém informações sobre os parâmetros que são utilizados nas requests para a API.
-
-## Documentação da API
-- [Documentação Backend](backend/README.md)

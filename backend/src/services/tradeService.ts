@@ -1,4 +1,3 @@
-import Partner from '../models/Partner';
 import TradeData from '../models/TradeData';
 
 export const saveTradeData = async (data: any) => {
@@ -63,55 +62,5 @@ export const saveTradeData = async (data: any) => {
     console.log('Trade data saved successfully!');
   } catch (error) {
     console.error('Error saving trade data:', error);
-  }
-};
-
-export const savePartnerData = async (partners: any[]) => {
-  for (const partner of partners) {
-    try {
-      const {
-        text,
-        PartnerCode,
-        PartnerDesc,
-        PartnerCodeIsoAlpha2,
-        PartnerCodeIsoAlpha3,
-        entryEffectiveDate,
-        entryExpiredDate,
-        isGroup,
-        partnerNote,
-      } = partner;
-      console.log('\n\nDATA:', partner);
-
-      // Check if the Partner already exists in the database, and if so, update it
-      const existingPartner = await Partner.findOne({ where: { PartnerCode } });
-
-      if (existingPartner) {
-        await existingPartner.update({
-          text,
-          PartnerCode,
-          PartnerDesc,
-          PartnerCodeIsoAlpha2,
-          PartnerCodeIsoAlpha3,
-          entryEffectiveDate,
-          entryExpiredDate,
-          isGroup,
-          partnerNote,
-        });
-      } else {
-        await Partner.create({
-          text,
-          PartnerCode,
-          PartnerDesc,
-          PartnerCodeIsoAlpha2,
-          PartnerCodeIsoAlpha3,
-          entryEffectiveDate,
-          entryExpiredDate,
-          isGroup,
-          partnerNote,
-        });
-      }
-    } catch (error) {
-      console.error('Error saving partner data:', error);
-    }
   }
 };

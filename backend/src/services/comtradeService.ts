@@ -41,18 +41,9 @@ interface DataBody {
   clCodeValue: string;
 }
 
-const filters = {
-  typeCode: "typeCode",
-  freqCode: "freqCode",
-  classificationSearchCode: "classificationSearchCode",
-  reporterCode: "reporterCode",
-  partnerCode: "partnerCode",
-  partner2Code: "partner2Code",
-  period: "period",
-  cmdCode: "cmdCode",
-  flowCode: "flowCode",
-  customCode: "customsCode",
-  motCode: "motCode",
+interface ResponseData {
+  data: any;
+  filename: string;
 }
 
 export async function fetchData(dataBody: RequestBody): Promise<any[]> {
@@ -269,7 +260,7 @@ const makeRequestsWithDelay = async (
   console.log('Total Combinations:', allUrls.length);
   console.log(`Delay between requests: ${delayMs}ms`);
 
-  let allResponses = [];
+  const allResponses: ResponseData[] = []
   for (let [index, url] of allUrls.entries()) {
     let response;
     try {
@@ -282,7 +273,7 @@ const makeRequestsWithDelay = async (
       response = await axios.get(comtradeUrl);
       allResponses.push({
         data: response.data.data,
-        filename: `comtrade_data_${index}.csv`,
+        filename: fileFormat === "xlsx" ? `comtrade_data_${index}.xlsx` : `comtrade_data_${index}.csv`,
       });
 
       if (index < allUrls.length - 1) {
