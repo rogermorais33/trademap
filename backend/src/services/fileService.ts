@@ -6,7 +6,7 @@ import path from 'path';
 import archiver from 'archiver';
 import File from '../models/File';
 
-interface CsvData {
+interface Data {
   data: any[];
   filename: string;
 }
@@ -43,7 +43,45 @@ export const getFileFromDatabase = async (id: number) => {
   }
 };
 
-export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
+
+export const writeToCsv = async (data: any[], res: Response) => {
+  const csvWriter = createObjectCsvWriter({
+    path: 'data.csv',
+    header: Object.keys(data[0]).map((key) => ({ id: key, title: key })),
+  });
+
+  await csvWriter.writeRecords(data);
+
+  const csvContent = fs.readFileSync('data.csv');
+  await saveFileToDatabase('data.csv', 'application/csv', csvContent);
+
+  res.download('data.csv', 'data.csv', (err) => {
+    if (err) {
+      console.error(err);
+    }
+  });
+};
+
+export const writeToExcel = async (data: any[], res: Response) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Data');
+
+  worksheet.columns = Object.keys(data[0]).map((key) => ({ header: key, key }));
+
+  data.forEach((item) => {
+    worksheet.addRow(item);
+  });
+
+  const excelBuffer = await workbook.xlsx.writeBuffer();
+  const bufferNode = Buffer.from(excelBuffer);
+  await saveFileToDatabase('data.xlsx', 'application/xls', bufferNode);
+
+  res.setHeader('Content-Disposition', 'attachment; filename=data.xlsx');
+  await workbook.xlsx.write(res);
+  res.end();
+};
+
+export const writeToZip = async (csvDataArray: Data[], res: Response) => {
   try {
     console.log('Starting CSV processing. Quantity:', csvDataArray.length);
 
@@ -153,39 +191,109 @@ export const writeToZip = async (csvDataArray: CsvData[], res: Response) => {
   }
 };
 
-export const writeToCsv = async (data: any[], res: Response) => {
-  const csvWriter = createObjectCsvWriter({
-    path: 'data.csv',
-    header: Object.keys(data[0]).map((key) => ({ id: key, title: key })),
-  });
+export const writeToZipExcel = async (dataArray: Data[], res: Response) => {
+  try {
+    console.log('Starting Excel file processing. Quantity:', dataArray.length);
 
-  await csvWriter.writeRecords(data);
-
-  const csvContent = fs.readFileSync('data.csv');
-  await saveFileToDatabase('data.csv', 'application/csv', csvContent);
-
-  res.download('data.csv', 'data.csv', (err) => {
-    if (err) {
-      console.error(err);
+    const tempDir = path.join(__dirname, 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
-  });
-};
+    const createdFilePaths: string[] = [];
 
-export const writeToExcel = async (data: any[], res: Response) => {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Data');
+    for (const [index, data] of dataArray.entries()) {
+      if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+        console.error(`Invalid data for file ${index}:`, data);
+        continue;
+      }
 
-  worksheet.columns = Object.keys(data[0]).map((key) => ({ header: key, key }));
+      try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Sheet1');
 
-  data.forEach((item) => {
-    worksheet.addRow(item);
-  });
+        // Add headers
+        const headers = Object.keys(data.data[0]);
+        worksheet.columns = headers.map(header => ({
+          header,
+          key: header,
+          width: 20
+        }));
 
-  const excelBuffer = await workbook.xlsx.writeBuffer();
-  const bufferNode = Buffer.from(excelBuffer);
-  await saveFileToDatabase('data.xlsx', 'application/xls', bufferNode);
+        // Add data rows
+        worksheet.addRows(data.data);
 
-  res.setHeader('Content-Disposition', 'attachment; filename=data.xlsx');
-  await workbook.xlsx.write(res);
-  res.end();
+        // Determine file path and extension
+        const filename = data.filename || `data_${index}.xlsx`;
+        const filePath = path.join(tempDir, filename);
+
+        // Save the workbook
+        await workbook.xlsx.writeFile(filePath);
+
+        if (fs.existsSync(filePath)) {
+          const stats = fs.statSync(filePath);
+          console.log(`Excel file created successfully. Size: ${stats.size} bytes`);
+          createdFilePaths.push(filePath);
+        } else {
+          console.error('Excel file not created:', filePath);
+        }
+      } catch (fileError) {
+        console.error(`Error creating Excel file ${index}:`, fileError);
+      }
+    }
+
+    if (createdFilePaths.length === 0) {
+      throw new Error('No Excel file was created successfully');
+    }
+
+    // ZIP creation logic (similar to previous implementation)
+    const zipPath = path.join(tempDir, 'data.zip');
+    const output = fs.createWriteStream(zipPath);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+    archive.pipe(output);
+
+    for (const filePath of createdFilePaths) {
+      const filename = path.basename(filePath);
+      archive.file(filePath, { name: filename });
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      output.on('close', () => {
+        console.log('ZIP created successfully');
+        resolve();
+      });
+      archive.on('error', reject);
+      archive.finalize();
+    });
+
+    // Send ZIP and cleanup
+    res.download(zipPath, 'data.zip', (err) => {
+      if (err) {
+        console.error('Error sending ZIP:', err);
+      }
+
+      // Cleanup temporary files
+      createdFilePaths.forEach((filePath) => {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error(`Error removing file ${filePath}:`, e);
+        }
+      });
+
+      try {
+        fs.unlinkSync(zipPath);
+      } catch (e) {
+        console.error('Error removing ZIP file:', e);
+      }
+    });
+  } catch (error) {
+    console.error('Process error:', error);
+    if (!res.headersSent) {
+      res.status(500).send('Error processing files');
+    }
+  }
 };

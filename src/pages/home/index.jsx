@@ -69,6 +69,12 @@ function App() {
   const resProducts = mapData(products, 'text', 'id');
   const resService = mapData(services, 'text', 'id');
 
+  useEffect(() => {
+    if (typeCodeValue === "S") {
+      setProductsValue([]);
+    }
+  }, [typeCodeValue]);
+
   function handleSubmit(format) {
     const selectedValues = {
       reportCountriesValue,
@@ -100,6 +106,82 @@ function App() {
         a.style.display = 'none';
         a.href = url;
         a.download = format === 'xlsx' ? 'data.xlsx' : 'data.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((error) => console.error('Error:', error));
+  }
+
+  function handleSubmitFromDb(format) {
+    const selectedValues = {
+      reportCountriesValue,
+      partnerCountriesValue,
+      partner2CountriesValue,
+      customCodeCountriesValue,
+      modeOfTransportCodesValue,
+      productsValue,
+      serviceValue,
+      typeCodeValue,
+      freqCodeValue,
+      clCodeValue,
+      period,
+      flowCodeValue,
+    };
+    console.log('Selected values: ', selectedValues);
+
+    fetch(`http://localhost:5000/getDataFromDb${format ? '?format=' + format : ''}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedValues),
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = format === 'xlsx' ? 'data.xlsx' : 'data.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((error) => console.error('Error:', error));
+  }
+
+  function manyFilesFromDb(format) {
+    const selectedValues = {
+      reportCountriesValue,
+      partnerCountriesValue,
+      partner2CountriesValue,
+      customCodeCountriesValue,
+      modeOfTransportCodesValue,
+      productsValue,
+      serviceValue,
+      typeCodeValue,
+      freqCodeValue,
+      clCodeValue,
+      period,
+      flowCodeValue,
+    };
+    console.log('Selected Values for manyFiles', selectedValues);
+
+    fetch(`http://localhost:5000/downloadZip${format ? '?format=' + format : ''}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(selectedValues),
+    })
+      .then((response) => response.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'data.zip';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -285,6 +367,25 @@ function App() {
       <Grid container spacing={2}>
         <Button onClick={() => manyFiles('csv')} variant="contained">
           Download Many Files (CSV)
+        </Button>
+        <Button onClick={() => manyFiles('XLSX')} variant="contained">
+          Download Many Files (XLSX)
+        </Button>
+      </Grid>
+
+      <Typography color="#ffffff" variant="h5" fontFamily={'gantari'} fontWeight={100}>
+        Download data from Database:
+      </Typography>
+      <Grid container spacing={2}>
+        <DownloadButton onClick={handleSubmitFromDb} format="csv" />
+        <DownloadButton onClick={handleSubmitFromDb} format="xlsx" />
+      </Grid>
+      <Grid container spacing={1}>
+        <Button onClick={() => manyFilesFromDb('csv')} variant="contained">
+          Download Many Files (CSV)
+        </Button>
+        <Button onClick={() => manyFilesFromDb('xlsx')} variant="contained">
+          Download Many Files (XLSX)
         </Button>
       </Grid>
     </Grid>

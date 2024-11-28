@@ -1,8 +1,9 @@
 import axios from 'axios';
 import { RequestBody } from '../types';
 import dotenv from 'dotenv';
-import { writeToZip } from './fileService';
+import { writeToZip, writeToZipExcel } from './fileService';
 import { saveTradeData } from './tradeService';
+import fileRepository from '../repositories/fileRepository';
 
 dotenv.config();
 
@@ -40,9 +41,27 @@ interface DataBody {
   clCodeValue: string;
 }
 
+const filters = {
+  typeCode: "typeCode",
+  freqCode: "freqCode",
+  classificationSearchCode: "classificationSearchCode",
+  reporterCode: "reporterCode",
+  partnerCode: "partnerCode",
+  partner2Code: "partner2Code",
+  period: "period",
+  cmdCode: "cmdCode",
+  flowCode: "flowCode",
+  customCode: "customsCode",
+  motCode: "motCode",
+}
+
 export async function fetchData(dataBody: RequestBody): Promise<any[]> {
   try {
-    const paramString = generateParams(dataBody);
+    const params = generateParams(dataBody);
+    const paramString = Object.entries(params)
+                              .filter(([_, value]) => value !== '')
+                              .map(([key, value]) => `${key}=${value}`)
+                              .join('&');
     const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCodeValue}/${dataBody.freqCodeValue}/${dataBody.clCodeValue}`;
     const comtradeUrl = `${baseUrl}?subscription-key=${subscriptionKey}${paramString ? `&${paramString}` : ''}`;
     console.log(`\nFINAL URL: ${comtradeUrl}\n`);
@@ -55,6 +74,24 @@ export async function fetchData(dataBody: RequestBody): Promise<any[]> {
     return data;
   } catch (error) {
     throw new Error(`Failed to fetch data`);
+  }
+}
+
+export async function getFilteredData(dataBody: RequestBody) {
+  const params = generateParams(dataBody);
+  const dt = await getFiles(params)
+  console.log("returning data from getFilteredData")
+  return dt
+}
+
+export async function getFiles(filters: any) {
+  try {
+    console.log("Pegando os dados do banco de dados")
+    const files = await fileRepository.findWithFilters(filters);
+    return files;
+  } catch (error) {
+    console.log("Errorr ao pegar os dados")
+    throw new Error(`Service Error: ${error}`);
   }
 }
 
@@ -124,10 +161,7 @@ export const generateParams = (body: any) => {
   };
   console.log('PARAMS: ', params);
 
-  return Object.entries(params)
-    .filter(([_, value]) => value !== '')
-    .map(([key, value]) => `${key}=${value}`)
-    .join('&');
+  return params
 };
 
 const cleanParams = (params: ParamsType): ParamsType => {
@@ -148,7 +182,7 @@ const cleanParams = (params: ParamsType): ParamsType => {
   return cleanedParams;
 };
 
-export async function generateURLs(dataBody: any, res: any) {
+export async function generateURLs(dataBody: any, res: any, fileFormat: string) {
   const {
     reportCountriesValue,
     partnerCountriesValue,
@@ -190,7 +224,7 @@ export async function generateURLs(dataBody: any, res: any) {
   const allUrls = generateAllCombinations(cleanedParams);
 
   try {
-    await makeRequestsWithDelay(allUrls, dataBody, 10000, res);
+    await makeRequestsWithDelay(allUrls, dataBody, 10000, res, fileFormat);
   } catch (error) {
     console.error('Error processing requests:', error);
   }
@@ -230,6 +264,7 @@ const makeRequestsWithDelay = async (
   dataBody: DataBody,
   delayMs: number = 10000,
   res: any,
+  fileFormat: string,
 ): Promise<void> => {
   console.log('Total Combinations:', allUrls.length);
   console.log(`Delay between requests: ${delayMs}ms`);
@@ -267,7 +302,11 @@ const makeRequestsWithDelay = async (
   }
   if (allResponses.length > 0) {
     console.log('Writing the zip');
-    await writeToZip(allResponses, res);
+    if (fileFormat === 'xlsx') {
+      await writeToZipExcel(allResponses, res);
+    } else {
+      await writeToZip(allResponses, res);
+    }
   }
   console.log('\nAll requests have been completed!');
 };
