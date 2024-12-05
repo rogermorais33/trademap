@@ -3,18 +3,18 @@ export interface QueryParams {
 }
 
 export interface RequestBody {
-  typeCodeValue: string;
-  freqCodeValue: string;
-  clCodeValue: string;
-  reportCountriesValue?: { value: string };
-  partnerCountriesValue?: { value: string };
-  partner2CountriesValue?: { value: string };
-  customCodeCountriesValue?: { value: string };
-  modeOfTransportCodesValue?: { value: string };
-  productsValue?: { value: string };
-  serviceValue?: { value: string };
+  typeCode: string;
+  freqCode: string;
+  clCode: string;
+  reportCountries?: { value: string };
+  partnerCountries?: { value: string };
+  partner2Countries?: { value: string };
+  customCodeCountries?: { value: string };
+  modeOfTransportCodes?: { value: string };
+  products?: { value: string };
+  service?: { value: string };
   period?: { value: string };
-  flowCodeValue?: { value: string };
+  flowCode?: { value: string };
   aggregateBy?: { value: string };
   breakdownMode?: { value: string };
   includeDesc?: { value: string };

@@ -43,7 +43,6 @@ export const getFileFromDatabase = async (id: number) => {
   }
 };
 
-
 export const writeToCsv = async (data: any[], res: Response) => {
   const csvWriter = createObjectCsvWriter({
     path: 'data.csv',
@@ -213,10 +212,10 @@ export const writeToZipExcel = async (dataArray: Data[], res: Response) => {
 
         // Add headers
         const headers = Object.keys(data.data[0]);
-        worksheet.columns = headers.map(header => ({
+        worksheet.columns = headers.map((header) => ({
           header,
           key: header,
-          width: 20
+          width: 20,
         }));
 
         // Add data rows

@@ -1,5 +1,5 @@
-import { Op } from "sequelize";
-import TradeData from "../models/TradeData";
+import { Op } from 'sequelize';
+import TradeData from '../models/TradeData';
 
 class FileRepository {
   async findWithFilters(filters: any) {
@@ -7,8 +7,8 @@ class FileRepository {
 
     for (const [key, value] of Object.entries(filters)) {
       if (value) {
-        if (typeof value === "string" && value.includes(",")) {
-          whereConditions[key] = { [Op.in]: value.split(",").map(v => v.trim()) };
+        if (typeof value === 'string' && value.includes(',')) {
+          whereConditions[key] = { [Op.in]: value.split(',').map((v) => v.trim()) };
         } else {
           whereConditions[key] = value;
         }
@@ -18,10 +18,10 @@ class FileRepository {
       const files = await TradeData.findAll({
         where: whereConditions,
       });
-      const filesJson = files.map(file => file.toJSON());
+      const filesJson = files.map((file) => file.toJSON());
       return filesJson;
     } catch (error) {
-      console.error("Error executing query", error)
+      console.error('Error executing query', error);
       throw new Error(`Error fetching files: ${error}`);
     }
   }

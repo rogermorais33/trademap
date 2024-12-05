@@ -36,9 +36,9 @@ interface CurrentCombination {
 }
 
 interface DataBody {
-  typeCodeValue: string;
-  freqCodeValue: string;
-  clCodeValue: string;
+  typeCode: string;
+  freqCode: string;
+  clCode: string;
 }
 
 interface ResponseData {
@@ -50,10 +50,10 @@ export async function fetchData(dataBody: RequestBody): Promise<any[]> {
   try {
     const params = generateParams(dataBody);
     const paramString = Object.entries(params)
-                              .filter(([_, value]) => value !== '')
-                              .map(([key, value]) => `${key}=${value}`)
-                              .join('&');
-    const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCodeValue}/${dataBody.freqCodeValue}/${dataBody.clCodeValue}`;
+      .filter(([_, value]) => value !== '')
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+    const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCode}/${dataBody.freqCode}/${dataBody.clCode}`;
     const comtradeUrl = `${baseUrl}?subscription-key=${subscriptionKey}${paramString ? `&${paramString}` : ''}`;
     console.log(`\nFINAL URL: ${comtradeUrl}\n`);
 
@@ -70,18 +70,18 @@ export async function fetchData(dataBody: RequestBody): Promise<any[]> {
 
 export async function getFilteredData(dataBody: RequestBody) {
   const params = generateParams(dataBody);
-  const dt = await getFiles(params)
-  console.log("returning data from getFilteredData")
-  return dt
+  const dt = await getFiles(params);
+  console.log('returning data from getFilteredData');
+  return dt;
 }
 
 export async function getFiles(filters: any) {
   try {
-    console.log("Pegando os dados do banco de dados")
+    console.log('Pegando os dados do banco de dados');
     const files = await fileRepository.findWithFilters(filters);
     return files;
   } catch (error) {
-    console.log("Errorr ao pegar os dados")
+    console.log('Errorr ao pegar os dados');
     throw new Error(`Service Error: ${error}`);
   }
 }
@@ -112,15 +112,15 @@ export async function fetchProducts(productType: 'HS' | 'SITC' | 'BEC'): Promise
 
 export const generateParams = (body: any) => {
   const {
-    reportCountriesValue,
-    partnerCountriesValue,
-    partner2CountriesValue,
-    customCodeCountriesValue,
-    modeOfTransportCodesValue,
-    productsValue,
-    serviceValue,
+    reportCountries,
+    partnerCountries,
+    partner2Countries,
+    customCodeCountries,
+    modeOfTransportCodes,
+    products,
+    service,
     period,
-    flowCodeValue,
+    flowCode,
     aggregateBy,
     breakdownMode,
     includeDesc,
@@ -131,28 +131,28 @@ export const generateParams = (body: any) => {
   };
 
   const cmdCode =
-    Array.isArray(productsValue) && productsValue.length > 0
-      ? productsValue
-      : Array.isArray(serviceValue) && serviceValue.length > 0
-        ? serviceValue
+    Array.isArray(products) && products.length > 0
+      ? products
+      : Array.isArray(service) && service.length > 0
+        ? service
         : [];
 
   const params = {
-    reporterCode: extractValues(reportCountriesValue),
+    reporterCode: extractValues(reportCountries),
     period: extractValues(period),
-    partnerCode: extractValues(partnerCountriesValue),
-    partner2Code: extractValues(partner2CountriesValue),
+    partnerCode: extractValues(partnerCountries),
+    partner2Code: extractValues(partner2Countries),
     cmdCode: extractValues(cmdCode),
-    flowCode: extractValues(flowCodeValue),
-    customCode: extractValues(customCodeCountriesValue),
-    motCode: extractValues(modeOfTransportCodesValue),
+    flowCode: extractValues(flowCode),
+    customCode: extractValues(customCodeCountries),
+    motCode: extractValues(modeOfTransportCodes),
     aggregateBy: extractValues(aggregateBy),
     breakdownMode: extractValues(breakdownMode),
     includeDesc: extractValues(includeDesc),
   };
   console.log('PARAMS: ', params);
 
-  return params
+  return params;
 };
 
 const cleanParams = (params: ParamsType): ParamsType => {
@@ -175,36 +175,36 @@ const cleanParams = (params: ParamsType): ParamsType => {
 
 export async function generateURLs(dataBody: any, res: any, fileFormat: string) {
   const {
-    reportCountriesValue,
-    partnerCountriesValue,
-    partner2CountriesValue,
-    customCodeCountriesValue,
-    modeOfTransportCodesValue,
-    productsValue,
-    serviceValue,
+    reportCountries,
+    partnerCountries,
+    partner2Countries,
+    customCodeCountries,
+    modeOfTransportCodes,
+    products,
+    service,
     period,
-    flowCodeValue,
+    flowCode,
     aggregateBy,
     breakdownMode,
     includeDesc,
   } = dataBody;
 
   const cmdCode =
-    Array.isArray(productsValue) && productsValue.length > 0
-      ? productsValue
-      : Array.isArray(serviceValue) && serviceValue.length > 0
-        ? serviceValue
+    Array.isArray(products) && products.length > 0
+      ? products
+      : Array.isArray(service) && service.length > 0
+        ? service
         : [];
 
   const params: ParamsType = {
-    reporterCode: reportCountriesValue,
-    partnerCode: partnerCountriesValue,
-    partner2Code: partner2CountriesValue,
+    reporterCode: reportCountries,
+    partnerCode: partnerCountries,
+    partner2Code: partner2Countries,
     period: period,
     cmdCode: cmdCode,
-    flowCode: flowCodeValue,
-    customCode: customCodeCountriesValue,
-    motCode: modeOfTransportCodesValue,
+    flowCode: flowCode,
+    customCode: customCodeCountries,
+    motCode: modeOfTransportCodes,
     aggregateBy: aggregateBy,
     breakdownMode: breakdownMode,
     includeDesc: includeDesc,
@@ -260,20 +260,20 @@ const makeRequestsWithDelay = async (
   console.log('Total Combinations:', allUrls.length);
   console.log(`Delay between requests: ${delayMs}ms`);
 
-  const allResponses: ResponseData[] = []
+  const allResponses: ResponseData[] = [];
   for (let [index, url] of allUrls.entries()) {
     let response;
     try {
       console.log(`\nMaking requests ${index + 1} of ${allUrls.length}`);
 
-      const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCodeValue}/${dataBody.freqCodeValue}/${dataBody.clCodeValue}`;
+      const baseUrl = `${COMTRADE_REQUEST_URL}/${dataBody.typeCode}/${dataBody.freqCode}/${dataBody.clCode}`;
       const comtradeUrl = `${baseUrl}?${url}`;
       console.log(`URL: ${comtradeUrl}\n`);
 
       response = await axios.get(comtradeUrl);
       allResponses.push({
         data: response.data.data,
-        filename: fileFormat === "xlsx" ? `comtrade_data_${index}.xlsx` : `comtrade_data_${index}.csv`,
+        filename: fileFormat === 'xlsx' ? `comtrade_data_${index}.xlsx` : `comtrade_data_${index}.csv`,
       });
 
       if (index < allUrls.length - 1) {

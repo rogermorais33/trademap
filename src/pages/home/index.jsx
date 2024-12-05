@@ -1,67 +1,39 @@
 import { Button, Typography } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ToggleButtonInput from '../../components/ToggleButtonInput';
 import DownloadButton from '../../components/DownloadButton';
 import useApi from '../../hooks/useApi';
 import AutocompleteInput from '../../components/AutocompleteInput';
+import { getApiUrl, mapData, availablePeriod, filteredClCode } from '../../utils/utils';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger({ context: 'HomePage' });
 
 function App() {
-  const [reportCountriesValue, setReportCountriesValue] = useState([]);
-  const [partnerCountriesValue, setPartnerCountriesValue] = useState([]);
-  const [partner2CountriesValue, setPartner2CountriesValue] = useState([]);
-  const [customCodeCountriesValue, setCustomCodeCountriesValue] = useState([]);
-  const [modeOfTransportCodesValue, setModeOfTransportCodesValue] = useState([]);
-  const [productsValue, setProductsValue] = useState([]);
-  const [serviceValue, setServiceValue] = useState([]);
-  const [typeCodeValue, setTypeCodeValue] = useState('C');
-  const [freqCodeValue, setFreqCodeValue] = useState('A');
-  const [clCodeValue, setClCodeValue] = useState('HS');
-  const [flowCodeValue, setFlowCodeValue] = useState([]);
-  const [period, setPeriod] = useState([]);
+  const [filters, setFilters] = useState({
+    reportCountries: [],
+    partnerCountries: [],
+    partner2Countries: [],
+    customCodeCountries: [],
+    modeOfTransportCodes: [],
+    products: [],
+    service: [],
+    typeCode: 'C',
+    freqCode: 'A',
+    clCode: 'HS',
+    flowCode: [],
+    period: [],
+  });
 
   const { data: reportCountries } = useApi('reporters');
   const { data: partnerCountries } = useApi('partners');
   const { data: customCodeCountries } = useApi('custom_code');
   const { data: modeOfTransportCodes } = useApi('motc');
-  const { data: products, loading } = useApi('products', { productType: clCodeValue });
+  const { data: products, loading } = useApi('products', { productType: filters.clCode });
   const { data: services } = useApi('services');
 
-  const availablePeriod = useCallback(() => {
-    const year = 1962;
-    const period = [];
-
-    for (let currentYear = new Date().getFullYear() - 1; currentYear >= year; currentYear--) {
-      if (freqCodeValue === 'M') {
-        for (let month = 12; month > 0; month--) {
-          const formattedMonth = month.toString().padStart(2, '0');
-          const yearMonth = `${currentYear}/${formattedMonth}`;
-          period.push({
-            text: yearMonth,
-            code: `${currentYear}${formattedMonth}`,
-          });
-        }
-      } else {
-        period.push({
-          text: currentYear.toString(),
-          code: currentYear.toString(),
-        });
-      }
-    }
-    return period;
-  }, [freqCodeValue]);
-
-  const mapData = (data, labelKey, valueKey) =>
-    data ? data.map((item) => ({ label: item[labelKey], value: item[valueKey] })) : [];
-
-  const filteredClCode = [
-    { label: 'HS', value: 'HS' },
-    { label: 'SITC', value: 'SITC' },
-    { label: 'BEC', value: 'BEC' },
-    { label: 'EB', value: 'EB' },
-  ].filter((item) => (typeCodeValue === 'C' && item.value !== 'EB') || (typeCodeValue === 'S' && item.value === 'EB'));
-
-  const resPeriod = availablePeriod().map((period) => ({ label: period.text, value: period.code }));
+  const resPeriod = availablePeriod(filters.freqCode).map((period) => ({ label: period.text, value: period.code }));
   const resReportCountries = mapData(reportCountries, 'text', 'reporterCode');
   const resPartnerCountries = mapData(partnerCountries, 'text', 'PartnerCode');
   const resCustomCodeCountries = mapData(customCodeCountries, 'text', 'id');
@@ -70,39 +42,28 @@ function App() {
   const resService = mapData(services, 'text', 'id');
 
   useEffect(() => {
-    if (typeCodeValue === "S") {
-      setProductsValue([]);
+    if (filters.typeCode === 'S') {
+      setFilters((prevFilters) => ({ ...prevFilters, products: [] }));
     }
-  }, [typeCodeValue]);
+  }, [filters.typeCode]);
 
-  function handleSubmit(format, fromDb=false) {
-    const selectedValues = {
-      reportCountriesValue,
-      partnerCountriesValue,
-      partner2CountriesValue,
-      customCodeCountriesValue,
-      modeOfTransportCodesValue,
-      productsValue,
-      serviceValue,
-      typeCodeValue,
-      freqCodeValue,
-      clCodeValue,
-      period,
-      flowCodeValue,
-    };
-    console.log('Selected values: ', selectedValues);
-    let apiUrl = "http://localhost:5000/convert"
-    if (fromDb) {
-      apiUrl = "http://localhost:5000/getDataFromDb"
-    } 
-    console.time('Request Time');
+  useEffect(() => {
+    availablePeriod(filters.freqCode);
+    setFilters((prevFilters) => ({ ...prevFilters, period: null }));
+  }, [filters.freqCode]);
 
-    fetch(`${apiUrl}${format ? '?format=' + format : ''}`, {
+  const handleChange = (field, value) => {
+    setFilters((prevFilters) => ({ ...prevFilters, [field]: value }));
+  };
+
+  const handleSubmit = (format, fromDb = false) => {
+    const apiUrl = getApiUrl(format, fromDb);
+    logger.time('Request Time');
+
+    fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(selectedValues),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filters),
     })
       .then((response) => response.blob())
       .then((blob) => {
@@ -114,35 +75,19 @@ function App() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        console.timeEnd('Request Time');
+        logger.timeEnd('Request Time');
       })
-      .catch((error) => console.error('Error:', error));
-  }
+      .catch((error) => logger.error('Error:', error));
+  };
 
-  function manyFiles(format) {
-    const selectedValues = {
-      reportCountriesValue,
-      partnerCountriesValue,
-      partner2CountriesValue,
-      customCodeCountriesValue,
-      modeOfTransportCodesValue,
-      productsValue,
-      serviceValue,
-      typeCodeValue,
-      freqCodeValue,
-      clCodeValue,
-      period,
-      flowCodeValue,
-    };
-    console.log('Selected Values for manyFiles', selectedValues);
-    console.time('Request Time');
+  const manyFiles = (format, fromDb = false) => {
+    const apiUrl = getApiUrl(format, fromDb, true);
+    logger.time('Request Time');
 
-    fetch(`http://localhost:5000/downloadZip${format ? '?format=' + format : ''}`, {
+    fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(selectedValues),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filters),
     })
       .then((response) => response.blob())
       .then((blob) => {
@@ -154,15 +99,10 @@ function App() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        console.timeEnd('Request Time');
+        logger.timeEnd('Request Time');
       })
-      .catch((error) => console.error('Error:', error));
-  }
-
-  useEffect(() => {
-    availablePeriod();
-    setPeriod(null);
-  }, [freqCodeValue, availablePeriod]);
+      .catch((error) => logger.error('Error:', error));
+  };
 
   return (
     <Grid container direction={'column'} paddingInline={'20%'} paddingBlock={'5%'} gap={'48px'}>
@@ -176,14 +116,10 @@ function App() {
         <Grid container direction={'row'} spacing={2} height={'56px'}>
           <Grid>
             <ToggleButtonInput
-              value={typeCodeValue}
+              value={filters.typeCode}
               onChange={(newValue) => {
-                setTypeCodeValue(newValue);
-                if (newValue === 'S') {
-                  setClCodeValue('EB');
-                } else {
-                  setClCodeValue('HS');
-                }
+                handleChange('typeCode', newValue);
+                handleChange('clCode', newValue === 'S' ? 'EB' : 'HS');
               }}
               options={[
                 { label: 'Commodities', value: 'C' },
@@ -193,8 +129,8 @@ function App() {
           </Grid>
           <Grid>
             <ToggleButtonInput
-              value={freqCodeValue}
-              onChange={setFreqCodeValue}
+              value={filters.freqCode}
+              onChange={(newValue) => handleChange('freqCode', newValue)}
               options={[
                 { label: 'Annual', value: 'A' },
                 { label: 'Monthly', value: 'M' },
@@ -202,7 +138,11 @@ function App() {
             />
           </Grid>
           <Grid>
-            <ToggleButtonInput value={clCodeValue} onChange={setClCodeValue} options={filteredClCode} />
+            <ToggleButtonInput
+              value={filters.clCode}
+              onChange={(newValue) => handleChange('clCode', newValue)}
+              options={filteredClCode(filters.typeCode)}
+            />
           </Grid>
         </Grid>
       </Grid>
@@ -215,11 +155,11 @@ function App() {
         <Grid container spacing={2}>
           <Grid size={6}>
             <AutocompleteInput
-              label={typeCodeValue === 'C' ? 'Products' : 'Service'}
-              value={typeCodeValue === 'C' ? productsValue : serviceValue}
-              onChange={typeCodeValue === 'C' ? setProductsValue : setServiceValue}
+              label={filters.typeCode === 'C' ? 'Products' : 'Service'}
+              value={filters.typeCode === 'C' ? filters.products : filters.service}
+              onChange={(value) => handleChange(filters.typeCode === 'C' ? 'products' : 'service', value)}
               options={
-                typeCodeValue === 'C'
+                filters.typeCode === 'C'
                   ? loading
                     ? [{ label: 'Loading...', value: 'loading' }]
                     : resProducts
@@ -230,7 +170,12 @@ function App() {
             />
           </Grid>
           <Grid size={6}>
-            <AutocompleteInput label="Period" value={period} onChange={setPeriod} options={resPeriod} />
+            <AutocompleteInput
+              label="Period"
+              value={filters.period}
+              onChange={(value) => handleChange('period', value)}
+              options={resPeriod}
+            />
           </Grid>
         </Grid>
 
@@ -238,8 +183,8 @@ function App() {
           <Grid size={3}>
             <AutocompleteInput
               label="Trade flow"
-              value={flowCodeValue}
-              onChange={setFlowCodeValue}
+              value={filters.flowCode}
+              onChange={(value) => handleChange('flowCode', value)}
               options={[
                 { label: 'Import', value: 'M' },
                 { label: 'Export', value: 'X' },
@@ -249,24 +194,24 @@ function App() {
           <Grid size={3}>
             <AutocompleteInput
               label="Report Countries"
-              value={reportCountriesValue}
-              onChange={setReportCountriesValue}
+              value={filters.reportCountries}
+              onChange={(value) => handleChange('reportCountries', value)}
               options={resReportCountries}
             />
           </Grid>
           <Grid size={3}>
             <AutocompleteInput
               label="Partner Countries"
-              value={partnerCountriesValue}
-              onChange={setPartnerCountriesValue}
+              value={filters.partnerCountries}
+              onChange={(value) => handleChange('partnerCountries', value)}
               options={resPartnerCountries}
             />
           </Grid>
           <Grid size={3}>
             <AutocompleteInput
               label="Partner Countries 2"
-              value={partner2CountriesValue}
-              onChange={setPartner2CountriesValue}
+              value={filters.partnerCountries}
+              onChange={(value) => handleChange('partner2Countries', value)}
               options={resPartnerCountries}
             />
           </Grid>
@@ -276,16 +221,16 @@ function App() {
           <Grid size={3}>
             <AutocompleteInput
               label="Custom Code Countries"
-              value={customCodeCountriesValue}
-              onChange={setCustomCodeCountriesValue}
+              value={filters.customCodeCountries}
+              onChange={(value) => handleChange('customCodeCountries', value)}
               options={resCustomCodeCountries}
             />
           </Grid>
           <Grid size={3}>
             <AutocompleteInput
               label="Mode Of Transport Codes"
-              value={modeOfTransportCodesValue}
-              onChange={setModeOfTransportCodesValue}
+              value={filters.modeOfTransportCodes}
+              onChange={(value) => handleChange('modeOfTransportCodes', value)}
               options={resModeOfTransportCodes}
             />
           </Grid>
@@ -309,8 +254,8 @@ function App() {
         Download data from Database:
       </Typography>
       <Grid container spacing={2}>
-        <DownloadButton onClick={handleSubmit} format="csv" fromDb={true}/>
-        <DownloadButton onClick={handleSubmit} format="xlsx" fromDb={true}/>
+        <DownloadButton onClick={handleSubmit} format="csv" fromDb={true} />
+        <DownloadButton onClick={handleSubmit} format="xlsx" fromDb={true} />
       </Grid>
     </Grid>
   );

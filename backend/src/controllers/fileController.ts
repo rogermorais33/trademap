@@ -17,7 +17,7 @@ export const handleComtradeExport = async (req: Request<{}, {}, RequestBody, Que
     } else {
       await writeToCsv(data, res);
     }
-    console.log(`${fileFormat} file saved successfully`)
+    console.log(`${fileFormat} file saved successfully`);
   } catch {
     console.log('Data:', data);
     console.error('Error writing file');
@@ -34,13 +34,13 @@ export const handleComtradeExportFromDb = async (req: Request<{}, {}, RequestBod
   try {
     const fileFormat = req.query.format || 'csv';
     if (fileFormat === 'xlsx') {
-      console.log("Downloading excel from database")
+      console.log('Downloading excel from database');
       await writeToExcel(dt, res);
     } else {
-      console.log("Downloading csv from database", dt)
+      console.log('Downloading csv from database', dt);
       await writeToCsv(dt, res);
     }
-    console.log(`${fileFormat} file saved successfully`)
+    console.log(`${fileFormat} file saved successfully`);
   } catch {
     console.log('Data:', dt);
     console.error('Error writing file');
